@@ -1,13 +1,17 @@
 function love.load()
     anim8 = require('libraries.anim8')
+    sti = require('libraries.sti')
+
+    gameMap = sti('assets/maps/second_map_re.lua')
+
     love.graphics.setDefaultFilter("nearest", "nearest")
     love.window.setTitle("SEGETES - The Game")
 
     player = {}
     player.x = 0
     player.y = 0
-    player.speed = 5
-    player.sprite_sheet = love.graphics.newImage('assets/sprites/player_c.png')
+    player.speed = 2
+    player.sprite_sheet = love.graphics.newImage('assets/sprites/fighter.png')
     player.grid = anim8.newGrid(24, 32, player.sprite_sheet:getWidth(), player.sprite_sheet:getHeight())
 
     player.animations = {}
@@ -57,6 +61,6 @@ function love.update(dt)
 end
 
 function love.draw()
-    love.graphics.draw(background, 0, 0)
-    player.anim:draw(player.sprite_sheet, player.x, player.y, nil, 2)
+    gameMap:draw()
+    player.anim:draw(player.sprite_sheet, player.x, player.y, nil, 1)
 end
