@@ -8,6 +8,7 @@ function love.load()
 
     love.graphics.setDefaultFilter("nearest", "nearest")
     love.window.setTitle("SEGETES - The Game")
+    love.window.setFullscreen(true)
 
     player = {}
     player.x = 400
