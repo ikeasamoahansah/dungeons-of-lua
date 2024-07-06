@@ -1,15 +1,17 @@
 function love.load()
     anim8 = require('libraries.anim8')
     sti = require('libraries.sti')
+    camera = require('libraries.camera')
 
     gameMap = sti('assets/maps/second_map_re.lua')
+    cam = camera()
 
     love.graphics.setDefaultFilter("nearest", "nearest")
     love.window.setTitle("SEGETES - The Game")
 
     player = {}
-    player.x = 0
-    player.y = 0
+    player.x = 400
+    player.y = 300
     player.speed = 2
     player.sprite_sheet = love.graphics.newImage('assets/sprites/fighter.png')
     player.grid = anim8.newGrid(24, 32, player.sprite_sheet:getWidth(), player.sprite_sheet:getHeight())
@@ -53,14 +55,42 @@ function love.update(dt)
         player.anim:gotoFrame(2)
     end
 
-    player.animations.up:update(dt)
-    player.animations.down:update(dt)
-    player.animations.left:update(dt)
-    player.animations.right:update(dt)
+    player.anim:update(dt)
 
+    cam:lookAt(player.x, player.y)
+    
+    local w = love.graphics.getWidth()
+    local h = love.graphics.getHeight()
+    
+    local mapW = gameMap.width * gameMap.tilewidth
+    local mapH = gameMap.height * gameMap.tileheight
+    
+    if cam.x < w/2 then
+        cam.x = w/2
+    end
+    
+    if cam.y < h/2 then
+        cam.y = h/2
+    end
+    
+    -- Right border
+    if cam.x > (mapW - w/2) then
+        cam.x = (mapW - w/2)
+    end
+    
+    -- Bottom border
+    if cam.y > (mapH - h/2) then
+        cam.y = (mapH - h/2)
+    end
+    
 end
 
 function love.draw()
-    gameMap:draw()
-    player.anim:draw(player.sprite_sheet, player.x, player.y, nil, 1)
+    cam:attach()
+        gameMap:drawLayer(gameMap.layers["around"])
+        gameMap:drawLayer(gameMap.layers["Ground"])
+        gameMap:drawLayer(gameMap.layers["Tile Layer 2"])
+        player.anim:draw(player.sprite_sheet, player.x, player.y, nil, 1, nil, 12, 16)
+        cam:zoomTo(3.5)
+    cam:detach()
 end
