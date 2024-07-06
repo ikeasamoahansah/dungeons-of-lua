@@ -25,7 +25,7 @@ function love.load()
 
     player.anim = player.animations.down
 
-    background = love.graphics.newImage('assets/maps/grass.png')
+    -- background = love.graphics.newImage('assets/maps/grass.png')
 end
 
 function love.update(dt)
