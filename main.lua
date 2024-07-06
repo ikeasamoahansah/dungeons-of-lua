@@ -3,7 +3,7 @@ function love.load()
     sti = require('libraries.sti')
     camera = require('libraries.camera')
 
-    gameMap = sti('assets/maps/second_map_re.lua')
+    gameMap = sti('assets/maps/dungeon.lua')
     cam = camera()
 
     love.graphics.setDefaultFilter("nearest", "nearest")
@@ -12,7 +12,7 @@ function love.load()
     player = {}
     player.x = 400
     player.y = 300
-    player.speed = 1
+    player.speed = 3
     player.sprite_sheet = love.graphics.newImage('assets/sprites/fighter.png')
     player.grid = anim8.newGrid(24, 32, player.sprite_sheet:getWidth(), player.sprite_sheet:getHeight())
 
@@ -87,10 +87,9 @@ end
 
 function love.draw()
     cam:attach()
-        gameMap:drawLayer(gameMap.layers["around"])
+        gameMap:drawLayer(gameMap.layers["Divisions"])
         gameMap:drawLayer(gameMap.layers["Ground"])
-        gameMap:drawLayer(gameMap.layers["Tile Layer 2"])
-        player.anim:draw(player.sprite_sheet, player.x, player.y, nil, 1, nil, 12, 16)
-        cam:zoomTo(3.5)
+        player.anim:draw(player.sprite_sheet, player.x, player.y, nil, 2, nil, 12, 16)
+        -- cam:zoomTo(3.5)
     cam:detach()
 end
