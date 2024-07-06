@@ -14,7 +14,7 @@ function love.load()
     player.x = 400
     player.y = 300
     player.speed = 3
-    player.sprite_sheet = love.graphics.newImage('assets/sprites/fighter.png')
+    player.sprite_sheet = love.graphics.newImage('assets/sprites/Fumiko.png')
     player.grid = anim8.newGrid(24, 32, player.sprite_sheet:getWidth(), player.sprite_sheet:getHeight())
 
     player.animations = {}
