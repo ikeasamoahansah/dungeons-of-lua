@@ -46,7 +46,10 @@ function love.load()
         end
     end
 
-    
+    sounds = {}
+    sounds.dungeon = love.audio.newSource("assets/sounds/dungeon.mp3", "stream")
+    sounds.dungeon:setLooping(true)
+    sounds.dungeon:play()
 end
 
 function love.update(dt)
@@ -117,6 +120,12 @@ function love.update(dt)
     -- Bottom border
     if cam.y > (mapH - h/2) then
         cam.y = (mapH - h/2)
+    end
+
+    -- sounds
+
+    if love.keyboard.isDown("z") then
+        sounds.dungeon:stop()
     end
     
 end
