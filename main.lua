@@ -2,9 +2,11 @@ function love.load()
     anim8 = require('libraries.anim8')
     sti = require('libraries.sti')
     camera = require('libraries.camera')
+    wf = require('libraries.windfield')
 
     gameMap = sti('assets/maps/dungeon.lua')
     cam = camera()
+    world = wf.newWorld(0, 0)
 
     love.graphics.setDefaultFilter("nearest", "nearest")
     love.window.setTitle("SEGETES - The Game")
@@ -12,9 +14,11 @@ function love.load()
     -- love.window.setFullscreen(true)
 
     player = {}
+    player.collider = world:newBSGRectangleCollider(400, 250, 30, 50, 10)
+    player.collider:setFixedRotation(true)
     player.x = 0
     player.y = 0
-    player.speed = 3
+    player.speed = 150
     player.sprite_sheet = love.graphics.newImage('assets/sprites/Fumiko.png')
     player.grid = anim8.newGrid(24, 32, player.sprite_sheet:getWidth(), player.sprite_sheet:getHeight())
 
@@ -29,34 +33,51 @@ function love.load()
     -- player.animations.attack.left = anim8.newAnimation(player.grid('1-5', 8), 0.2)
     -- player.animations.attack.right = anim8.newAnimation(player.grid('1-5', 6), 0.2)
 
-    player.anim = player.animations.down
+    player.anim = player.animations.up
 
     -- background = love.graphics.newImage('assets/maps/grass.png')
+
+    walls = {}
+    if gameMap.layers["walls"] then
+        for i, obj in pairs(gameMap.layers["walls"].objects) do
+            local wall = world:newRectangleCollider(obj.x, obj.y, obj.width, obj.height)
+            wall:setType("static")
+            table.insert(walls, wall)
+        end
+    end
+
+    
 end
 
 function love.update(dt)
     local keyPressed = false
+    
+    -- collider
+    local vx = 0
+    local vy = 0
 
     if love.keyboard.isDown("right") then
-        player.x = player.x + player.speed
+        vx = player.speed
         player.anim = player.animations.right
         keyPressed = true
     elseif love.keyboard.isDown("left") then
-        player.x = player.x - player.speed
+        vx = player.speed * -1
         player.anim = player.animations.left
         keyPressed = true
     elseif love.keyboard.isDown("down") then
-        player.y = player.y + player.speed
+        vy = player.speed
         player.anim = player.animations.down
         keyPressed = true
     elseif love.keyboard.isDown("up") then
-        player.y = player.y - player.speed
+        vy = player.speed * -1
         player.anim = player.animations.up
         keyPressed = true
     end
     if love.keyboard.isDown("escape") then
        love.event.quit()
     end
+
+    player.collider:setLinearVelocity(vx, vy)
 
     -- if love.keyboard.isDown("space") then
     --     player.anim = player.animations.attack.down
@@ -65,6 +86,10 @@ function love.update(dt)
     if keyPressed == false then
         player.anim:gotoFrame(2)
     end
+
+    world:update(dt)
+    player.x = player.collider:getX()
+    player.y = player.collider:getY()
 
     player.anim:update(dt)
 
@@ -100,7 +125,8 @@ function love.draw()
     cam:attach()
         gameMap:drawLayer(gameMap.layers["Ground"])
         gameMap:drawLayer(gameMap.layers["Divisions"])
-        player.anim:draw(player.sprite_sheet, player.x, player.y, nil, 2, nil, 12, 16)
+        player.anim:draw(player.sprite_sheet, player.x, player.y, nil, 1.5, nil, 12, 16)
+        -- world:draw()
         -- cam:zoomTo(3.5)
     cam:detach()
 end
