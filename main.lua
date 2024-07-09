@@ -135,7 +135,5 @@ function love.draw()
         gameMap:drawLayer(gameMap.layers["Ground"])
         gameMap:drawLayer(gameMap.layers["Divisions"])
         player.anim:draw(player.sprite_sheet, player.x, player.y, nil, 1.5, nil, 12, 16)
-        -- world:draw()
-        -- cam:zoomTo(3.5)
     cam:detach()
 end
