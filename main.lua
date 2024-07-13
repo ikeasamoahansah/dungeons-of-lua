@@ -11,7 +11,7 @@ function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
     love.window.setTitle("SEGETES - The Game")
     love.window.setMode(800, 600)
-    -- love.window.setFullscreen(true)
+    love.window.setFullscreen(true)
 
     player = {}
     player.collider = world:newBSGRectangleCollider(400, 250, 30, 50, 10)
