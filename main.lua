@@ -14,7 +14,7 @@ function love.load()
     love.window.setFullscreen(true)
 
     player = {}
-    player.collider = world:newBSGRectangleCollider(400, 250, 30, 50, 10)
+    player.collider = world:newBSGRectangleCollider(960, 1890, 30, 50, 10)
     player.collider:setFixedRotation(true)
     player.x = 0
     player.y = 0
