@@ -37,6 +37,11 @@ function love.load()
 
     -- background = love.graphics.newImage('assets/maps/grass.png')
 
+    -- TODO: 
+    -- Add enemies
+    -- Configure shaders
+    -- Make enemies attack player with readius
+
     walls = {}
     if gameMap.layers["walls"] then
         for i, obj in pairs(gameMap.layers["walls"].objects) do
