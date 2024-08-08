@@ -19,6 +19,6 @@ Requirements for the software and other tools to build, test and push
 
 ## License
 
-This project is licensed under the [CC0 1.0 Universal](LICENSE.md)
-Creative Commons License - see the [LICENSE](LICENSE.md) file for
+This project is licensed under the [CC0 1.0 Universal](LICENSE)
+Creative Commons License - see the [LICENSE](LICENSE) file for
 details
