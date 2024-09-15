@@ -10,8 +10,8 @@ function love.load()
 
     love.graphics.setDefaultFilter("nearest", "nearest")
     love.window.setTitle("SEGETES - The Game")
-    love.window.setMode(800, 600)
-    love.window.setFullscreen(true)
+    love.window.setMode(400, 300)
+--     love.window.setFullscreen(true)
 
     player = {}
     player.collider = world:newBSGRectangleCollider(960, 1890, 30, 50, 10)
@@ -59,7 +59,6 @@ end
 
 function love.update(dt)
     local keyPressed = false
-    
     -- collider
     local vx = 0
     local vy = 0
@@ -102,26 +101,20 @@ function love.update(dt)
     player.anim:update(dt)
 
     cam:lookAt(player.x, player.y)
-    
     local w = love.graphics.getWidth()
     local h = love.graphics.getHeight()
-    
     local mapW = gameMap.width * gameMap.tilewidth
     local mapH = gameMap.height * gameMap.tileheight
-    
     if cam.x < w/2 then
         cam.x = w/2
     end
-    
     if cam.y < h/2 then
         cam.y = h/2
     end
-    
     -- Right border
     if cam.x > (mapW - w/2) then
         cam.x = (mapW - w/2)
     end
-    
     -- Bottom border
     if cam.y > (mapH - h/2) then
         cam.y = (mapH - h/2)
@@ -132,7 +125,6 @@ function love.update(dt)
     if love.keyboard.isDown("z") then
         sounds.dungeon:stop()
     end
-    
 end
 
 function love.draw()
