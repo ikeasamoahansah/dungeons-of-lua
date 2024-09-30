@@ -16,6 +16,10 @@ Requirements for the software and other tools to build, test and push
 - Lua
 - Code editor
 
+### Navigation
+
+main.lua <- contains all the stuff
+libraries dir <- contains 3rd party libraries used for the game
 
 ## License
 
