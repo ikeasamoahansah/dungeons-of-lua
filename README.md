@@ -18,8 +18,8 @@ Requirements for the software and other tools to build, test and push
 
 ### Navigation
 
-main.lua <- contains all the stuff
-libraries dir <- contains 3rd party libraries used for the game
+- main.lua <- contains all the stuff
+- libraries dir <- contains 3rd party libraries used for the game
 
 ## License
 
