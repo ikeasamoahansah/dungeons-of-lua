@@ -25,6 +25,12 @@ function love.load()
 
     player.anim = animations.up
 
+    require('enemy')
+    enemy.grid = anim8.newGrid(24, 32, enemy.sprite_sheet:getWidth(), enemy.sprite_sheet:getHeight())
+    enemy.collider = world:newBSGRectangleCollider(960, 1890, 30, 50, 10)
+    enemy.collider:setFixedRotation(true)
+
+    enemy.anim = animations.down
     -- background = love.graphics.newImage('assets/maps/grass.png')
 
     -- TODO:
@@ -50,6 +56,7 @@ end
 function love.update(dt)
     world:update(dt)
     playerUpdate(dt)
+    enemyUpdate(dt)
     if love.keyboard.isDown("escape") then
         love.event.quit()
     end
@@ -90,5 +97,6 @@ function love.draw()
     gameMap:drawLayer(gameMap.layers["Ground"])
     gameMap:drawLayer(gameMap.layers["Divisions"])
     drawPlayer()
+    drawEnemy()
     cam:detach()
 end
