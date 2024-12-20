@@ -1,7 +1,7 @@
 
 # Segetes
 
-2D RPG game written in Lua
+2D game written in Lua
 
 
 ## Getting Started
