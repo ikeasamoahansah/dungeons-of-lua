@@ -6,13 +6,13 @@ enemy.sprite_sheet = love.graphics.newImage('assets/sprites/mage_outline.png')
 enemy.seen_player = false
 
 
-function hapazard()
-    local vx, vy = 0, 0
-    vy = player.speed
+-- function hapazard()
+--     local vx, vy = 0, 0
+--     vy = player.speed
 
 
-    enemy.collider:setLinearVelocity(vx, vy)
-end
+--     enemy.collider:setLinearVelocity(vx, vy)
+-- end
 
 
 function enemyUpdate(dt)
