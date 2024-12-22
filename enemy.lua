@@ -28,4 +28,6 @@ function drawEnemy()
 end
 
 function chase()
+    -- when in range
+    -- enemy should pursue player
 end
