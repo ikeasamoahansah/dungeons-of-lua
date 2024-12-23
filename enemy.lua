@@ -1,3 +1,7 @@
+-- TODO:
+-- make enemies random
+-- generate enemies
+
 enemy = {}
 enemy.x = 0
 enemy.y = 0
