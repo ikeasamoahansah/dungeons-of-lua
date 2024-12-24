@@ -1,23 +1,17 @@
 -- TODO:
--- make enemies random
 -- generate enemies
 
-enemy = {}
-enemy.x = 0
-enemy.y = 0
-enemy.speed = 300
-enemy.sprite_sheet = love.graphics.newImage('assets/sprites/mage_outline.png')
-enemy.seen_player = false
+enemies = {}
 
-
--- function hapazard()
---     local vx, vy = 0, 0
---     vy = player.speed
-
-
---     enemy.collider:setLinearVelocity(vx, vy)
--- end
-
+-- Function to spawn enemy
+function spawnEnemy(x, y, type, args)
+    local enemy = {}
+    enemy.type = type
+    enemy.health = 3
+    enemy.moving = 1
+    enemy.dead = false
+    enemy.chase = true
+end
 
 function enemyUpdate(dt)
     --if enemy.seen_player == false then
