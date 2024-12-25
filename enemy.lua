@@ -14,9 +14,6 @@ function spawnEnemy(x, y, type, args)
 end
 
 function enemyUpdate(dt)
-    --if enemy.seen_player == false then
-    --    hapazard()
-    --end
     enemy.anim:update(dt)
 end
 
