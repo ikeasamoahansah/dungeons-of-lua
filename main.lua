@@ -9,8 +9,8 @@ end
 
 function love.draw()
     cam:attach()
-    gameMap:drawLayer(gameMap.layers["Ground"])
-    gameMap:drawLayer(gameMap.layers["Divisions"])
+    gameMap:drawLayer(gameMap.layers["floor"])
+    gameMap:drawLayer(gameMap.layers["base_wall"])
     drawPlayer()
     -- drawEnemy()
     cam:detach()
