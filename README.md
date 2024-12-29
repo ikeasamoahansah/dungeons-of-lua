@@ -1,7 +1,7 @@
 
-# Segetes
+# Dungeons-of-Lua
 
-2D game written in Lua
+2D GAME
 
 
 ## Getting Started
@@ -19,7 +19,9 @@ Requirements for the software and other tools to build, test and push
 ### Navigation
 
 - main.lua <- contains all the stuff
-- libraries dir <- contains 3rd party libraries used for the game
+- libraries DIR <- contains 3rd party libraries used for the game
+- assets DIR <- assets used in the game
+- src DIR <- contains other files and environments
 
 ## License
 
