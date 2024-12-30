@@ -11,18 +11,27 @@ function spawnEnemy(x, y, type, args)
     enemy.moving = 1
     enemy.dead = false
     enemy.chase = true
+    enemy.startX = x
+    enemy.startY = y
+
+    local init
+    if type == "bat" then
+        init = require("src/enemies/bat")
+    elseif type == "mage" then
+        init = require("src/enemies/mage")
+    elseif type == "boss" then
+        init = require("src/enemies/boss")
+    end
+
+    enemy = init(enemy, x, y, args)
 end
 
 function enemyUpdate(dt)
-    enemy.anim:update(dt)
+    for i, e in ipairs(self) do
+        e:update(dt)
+    end
 end
 
 function drawEnemy()
-    local px, py = enemy.x, enemy.y
-    enemy.anim:draw(enemy.sprite_sheet, px, py, nil, 1.5, nil, 12, 16)
 end
 
-function chase()
-    -- when in range
-    -- enemy should pursue player
-end

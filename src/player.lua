@@ -2,7 +2,7 @@ player = {}
 player.x = 0
 player.y = 0
 player.speed = 150
-player.sprite_sheet = love.graphics.newImage('assets/sprites/Fumiko.png')
+player.sprite_sheet = sprites.playerSheet
 player.grid = anim8.newGrid(24, 32, player.sprite_sheet:getWidth(), player.sprite_sheet:getHeight())
 player.collider = world:newBSGRectangleCollider(960, 1890, 30, 50, 10)
 player.collider:setFixedRotation(true)
