@@ -24,14 +24,27 @@ function spawnEnemy(x, y, type, args)
     end
 
     enemy = init(enemy, x, y, args)
+    table.insert(enemies, enemy)
 end
 
-function enemyUpdate(dt)
+function enemies:update(dt)
     for i, e in ipairs(self) do
         e:update(dt)
     end
+   
+    -- remove dead enemies in reverse order
+    for i=#enemies,1,-1 do
+        if enemies[i].dead then
+            if enemies[i].physics ~= nil then
+                enemies[i].physics:destroy()
+            end
+            table.remove(enemies, i)
+        end
+    end
 end
 
-function drawEnemy()
+function enemies:draw()
+    for i, e in ipairs(self) do
+        e:draw()
+    end
 end
-

@@ -7,4 +7,37 @@ local function batInit(enemy, x, y, args)
 
     enemy.form = 1
     enemy.sprite = sprites.enemies.bat
+    
+    if args and args.form ~= nil then
+        enemy.form = args.form
+    end
+
+    enemy.health = 1
+    enemy.speed = 0
+    enemy.maxSpeed = 80
+    enemy.magnitude = 450
+    enemy.dir = vector(0, 1)
+    enemy.viewDistance = 100
+
+    enemy.grid = anim8.newGrid(16, 16, enemy.sprite:getWidth(), enemy.sprite:getHeight())
+    enemy.anim = anim8.newAnimation(enemy.grid('1-2', 1), 0.15)
+
+    enemy.floatTime = 0.5
+    enemy.floatY = 0
+    enemy.floatMax = 1.5
+
+    enemy.scaleX = 1
+    if math.random() < 0.5 then enemy.scaleX = -1 end
+
+    function enemy:update(dt)
+    end
+
+    function enemy:draw()
+    end
+
+    function enemy:die()
+    end
+    return enemy
 end
+
+return batInit

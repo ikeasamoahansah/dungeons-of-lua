@@ -5,19 +5,28 @@ function loadMap(mapName, destX, destY)
     end
 
     loadedMap = mapName
-    gameMap = sti("maps/" .. mapName .. ".lua")
+    gameMap = sti("assets/maps/" .. mapName .. ".lua")
 
     if gameMap.layers["enemies"] then
         for _, obj in pairs(gameMap.layers["enemies"].objects) do
             local args = {}
             if obj.properties.form then args.form = obj.properties.form end
-            spawnEnemy(obj.x, obj.y, obj.name, args)
+            spawnEnemy(obj.x, obj.y, "bat", args)
+        end
+    end
+    
+    walls = {}
+    if gameMap.layers["wall"] then
+        for i, obj in pairs(gameMap.layers["wall"].objects) do
+            local wall = world:newRectangleCollider(obj.x, obj.y, obj.width, obj.height)
+            wall:setType("static")
+            table.insert(walls, wall)
         end
     end
 
-    if gameMap.layers["chests"] then
-        for _, obj in pairs(gameMap.layers["chests"].objects) do
-            spawnChest(obj.x, obj.y, obj.name, obj.type)
-        end
-    end
+    --if gameMap.layers["chests"] then
+        --for _, obj in pairs(gameMap.layers["chests"].objects) do
+            --spawnChest(obj.x, obj.y, obj.name, obj.type)
+        --end
+    --end
 end

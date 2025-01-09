@@ -2,8 +2,7 @@ player = {}
 player.x = 0
 player.y = 0
 player.speed = 150
-player.sprite_sheet = sprites.playerSheet
-player.grid = anim8.newGrid(24, 32, player.sprite_sheet:getWidth(), player.sprite_sheet:getHeight())
+player.grid = anim8.newGrid(24, 32, sprites.playerSheet:getWidth(), sprites.playerSheet:getHeight())
 player.collider = world:newBSGRectangleCollider(960, 1890, 30, 50, 10)
 player.collider:setFixedRotation(true)
 
@@ -55,5 +54,5 @@ end
 
 function drawPlayer()
     local px, py = player.x, player.y
-    player.anim:draw(player.sprite_sheet, px, py, nil, 1.5, nil, 12, 16)
+    player.anim:draw(sprites.playerSheet, px, py, nil, 1.5, nil, 12, 16)
 end

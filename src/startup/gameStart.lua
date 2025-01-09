@@ -2,11 +2,12 @@ function gameStart()
     
     initGlobals()
     
+    vector = require "libraries/hump/vector"
+
     anim8 = require('libraries/anim8')
     sti = require('libraries/sti')
     wf = require('libraries/windfield')
 
-    gameMap = sti('assets/maps/dungeon.lua')
 
     world = wf.newWorld(0, 0)
 
