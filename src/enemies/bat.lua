@@ -27,6 +27,7 @@ local function batInit(enemy, x, y, args)
     enemy.floatMax = 1.5
 
     enemy.scaleX = 3
+    enemy.scaleY = 1
     -- if math.random() < 0.5 then enemy.scaleX = -1 end
 
     function enemy:update(dt)
@@ -38,7 +39,7 @@ local function batInit(enemy, x, y, args)
 
     function enemy:draw()
         local ex, ey = self.physics:getPosition()
-        self.anim:draw(self.sprite, ex, ey-self.floatY, nil, self.scaleX, 1, 8, 8)
+        self.anim:draw(self.sprite, ex, ey-self.floatY, nil, self.scaleX, self.scaleY, 8, 8)
     end
 
     function enemy:die()
