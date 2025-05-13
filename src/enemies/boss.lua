@@ -6,7 +6,7 @@ local function bossInit(enemy, x, y, args)
     enemy.physics.parent = enemy
 
     enemy.form = 1
-    enemy.sprite = sprites.enemies.mage
+    enemy.sprite = sprites.enemies.boss
 
     if args and args.form ~= nil then
         enemy.form = args.form
@@ -19,22 +19,18 @@ local function bossInit(enemy, x, y, args)
     enemy.dir = vector(0, 1)
     enemy.viewDistance = 100
 
-    enemy.grid = anim8.newGrid(20, 24, enemy.sprite:getWidth(), enemy.sprite:getHeight())
-    enemy.animations = {}
-    
-    enemy.animations.walk = anim8.newAnimation(enemy.grid('1-2', 1), 0.4)
+    enemy.grid = anim8.newGrid(20, 20, enemy.sprite:getWidth(), enemy.sprite:getHeight())    
+    enemy.anim = anim8.newAnimation(enemy.grid('1-2', 1), 0.3)
 
     if enemy.form == 2 then
         enemy.animations.staff = anim8.newAnimation(enemy.grid(3, 1), 1)
     end
 
-    enemy.anim = enemy.animations.walk
-
     enemy.floatTime = 0.5
     enemy.floatY = 0
     enemy.floatMax = 1.5
 
-    enemy.scaleX = 1
+    enemy.scaleX = 3
     if math.random() < 0.5 then enemy.scaleX = -1 end
 
     function enemy:update(dt)

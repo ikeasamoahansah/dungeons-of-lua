@@ -34,7 +34,7 @@ local function mageInit(enemy, x, y, args)
     enemy.floatY = 0
     enemy.floatMax = 1.5
 
-    enemy.scaleX = 1
+    enemy.scaleX = 2.5
     if math.random() < 0.5 then enemy.scaleX = -1 end
 
     function enemy:update(dt)
