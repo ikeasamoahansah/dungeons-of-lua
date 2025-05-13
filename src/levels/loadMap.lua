@@ -11,7 +11,8 @@ function loadMap(mapName, destX, destY)
         for _, obj in pairs(gameMap.layers["enemies"].objects) do
             local args = {}
             if obj.properties.form then args.form = obj.properties.form end
-            spawnEnemy(obj.x, obj.y, "bat", args)
+            -- print(obj.name)
+            spawnEnemy(obj.x, obj.y, obj.name, args)
         end
     end
     

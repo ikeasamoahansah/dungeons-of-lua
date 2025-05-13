@@ -30,9 +30,15 @@ local function batInit(enemy, x, y, args)
     if math.random() < 0.5 then enemy.scaleX = -1 end
 
     function enemy:update(dt)
+        enemy:moveLogic(dt)
+        local px, py = player.collider:getPosition()
+        local ex, ey = self.physics:getPosition()
+        self:setScaleX()
     end
 
     function enemy:draw()
+        local ex, ey = self.physics:getPosition()
+        self.anim:draw(self.sprite, ex, ey-self.floatY, nil, self.scaleX, 1, 8, 8)
     end
 
     function enemy:die()

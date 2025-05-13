@@ -13,6 +13,8 @@ function spawnEnemy(x, y, type, args)
     enemy.chase = true
     enemy.startX = x
     enemy.startY = y
+    enemy.state = 1
+    enemy.scaleX = 1
 
     local init
     if type == "bat" then
@@ -24,6 +26,24 @@ function spawnEnemy(x, y, type, args)
     end
 
     enemy = init(enemy, x, y, args)
+
+    function enemy:setScaleX()
+        local px, py = player.collider:getPosition()
+        local ex, ey = self.physics:getPosition()
+
+        if self.state >= 99 then
+            if px < ex then
+                self.scaleX = -1
+            else
+                self.scaleX = 1
+            end
+        end
+    end
+    
+    function enemy:moveLogic(dt)
+        self.anim:update(dt * self.moving)
+    end
+
     table.insert(enemies, enemy)
 end
 
