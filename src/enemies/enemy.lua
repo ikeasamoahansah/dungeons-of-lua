@@ -11,10 +11,24 @@ function spawnEnemy(x, y, type, args)
     enemy.moving = 1
     enemy.dead = false
     enemy.chase = true
+    enemy.scaleX = 1
+    
+    -- enemy state:
+    -- 0: idle, standing
+    -- 1: wander, stopped
+    -- 1.1: wander, moving
+    -- 99: alert
+    -- 100: attacking
+
+    enemy.state = 1
+
     enemy.startX = x
     enemy.startY = y
-    enemy.state = 1
-    enemy.scaleX = 1
+    enemy.wanderRadius = 30
+    enemy.wanderSpeed  = 15
+    enemy.wanderTimer = 0.5 + math.random() * 2
+    enemy.wnaderBufferTimer = 0
+    enemy.wanderDir = vector(1, 1)
 
     local init
     if type == "bat" then
@@ -44,12 +58,53 @@ function spawnEnemy(x, y, type, args)
         self.anim:update(dt * self.moving)
     end
 
+    function enemy:wanderUpdate(dt)
+        if self.wanderTimer > 0 then self.wanderTimer = self.wanderTimer - dt end
+        if self.wnaderBufferTimer > 0 then self.wnaderBufferTimer = self.wanderBufferTimer - dt end
+
+        if self.wanderTimer < 0 then
+            self.state = 1.1
+            self.wanderTimer = 0
+
+            local ex, ey = self.physics:getPosition()
+
+            if ex < self.startX and ey < self.startY then
+                self.wanderDir = vector(0, 1)
+            elseif ex > self.startX and ey < self.startY then
+                self.wanderDir = vector(-1, 0)
+            elseif ex < self.startX and ey > self.startY then
+                self.wanderDir = vector(1, 0)
+            else
+                self.wanderDir = vector(0, -1)
+            end
+
+            self.wanderBufferTimer = 0.3
+            self.wanderDir:rotateInplace(math.pi/-2 * math.random())
+        end
+
+        if self.state == 1.1 and self.physics then
+            self.physics:setX(self.physics:getX() + self.wanderDir.x + self.wanderSpeed*dt)
+            self.physics:setY(self.physics:getY() + self.wanderDir.y + self.wanderSpeed*dt)
+        
+            -- if distanceBetween(self.physics:getX(), self.physics:getY(), self.startX, self.startY) > self.wanderRadius and self.wanderBufferTimer <= 0 then
+            --     self.state = 1
+            --     self.wanderTimer = 1 + math.random(0.1, 0.8)
+            -- end
+        end
+    end
+
+    -- general update for all enemies
+    function enemy:genericUpdate(dt)
+        self.wanderUpdate(dt)
+    end
+
     table.insert(enemies, enemy)
 end
 
 function enemies:update(dt)
     for i, e in ipairs(self) do
         e:update(dt)
+        e:wanderUpdate(dt)
     end
    
     -- remove dead enemies in reverse order
