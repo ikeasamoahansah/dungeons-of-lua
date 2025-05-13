@@ -31,7 +31,7 @@ local function bossInit(enemy, x, y, args)
     enemy.floatMax = 1.5
 
     enemy.scaleX = 3
-    enemy.scaleY = 1
+    enemy.scaleY = 1.5
     -- if math.random() < 0.5 then enemy.scaleX = -1 end
 
     function enemy:update(dt)
