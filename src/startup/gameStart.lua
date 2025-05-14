@@ -3,6 +3,7 @@ function gameStart()
     initGlobals()
     
     vector = require "libraries/hump/vector"
+    utils = require "src/utils/utils"
 
     anim8 = require('libraries/anim8')
     sti = require('libraries/sti')
