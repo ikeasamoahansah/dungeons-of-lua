@@ -13,7 +13,7 @@ local function mageInit(enemy, x, y, args)
     end
 
     enemy.health = 1
-    enemy.speed = 0
+    enemy.speed = 2
     enemy.maxSpeed = 80
     enemy.magnitude = 450
     enemy.dir = vector(0, 1)
@@ -42,7 +42,7 @@ local function mageInit(enemy, x, y, args)
         enemy:moveLogic(dt)
         local px, py = player.collider:getPosition()
         local ex, ey = self.physics:getPosition()
-        self:setScaleX()
+        -- self:setScaleX()
     end
 
     function enemy:draw()

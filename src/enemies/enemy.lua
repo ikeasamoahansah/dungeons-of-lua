@@ -42,24 +42,24 @@ function spawnEnemy(x, y, type, args)
 
     enemy = init(enemy, x, y, args)
 
-    function enemy:setScaleX()
-        local px, py = player.collider:getPosition()
-        local ex, ey = self.physics:getPosition()
+    -- function enemy:setScaleX()
+    --     local px, py = player.collider:getPosition()
+    --     local ex, ey = self.physics:getPosition()
 
-        if self.state >= 99 then
-            if px < ex then
-                self.scaleX = -1
-            else
-                self.scaleX = 1
-            end
-        elseif self.state >= 1 and  self.state < 2 then
-            if self.wanderDir.x < 0 then
-                self.scaleX = -1
-            else
-                self.scaleX = 1
-            end
-        end
-    end
+    --     if self.state >= 99 then
+    --         if px < ex then
+    --             self.scaleX = -1
+    --         else
+    --             self.scaleX = 1
+    --         end
+    --     elseif self.state >= 1 and  self.state < 2 then
+    --         if self.wanderDir.x < 0 then
+    --             self.scaleX = -1
+    --         else
+    --             self.scaleX = 1
+    --         end
+    --     end
+    -- end
     
     function enemy:moveLogic(dt, stiff)
         self.anim:update(dt * self.moving)
