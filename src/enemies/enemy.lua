@@ -28,7 +28,7 @@ function spawnEnemy(x, y, type, args)
     enemy.wanderRadius = 30
     enemy.wanderSpeed  = 15
     enemy.wanderTimer = 0.5 + math.random() * 2
-    enemy.wnaderBufferTimer = 0
+    enemy.wanderBufferTimer = 0
     enemy.wanderDir = vector(1, 1)
 
     local init
@@ -68,8 +68,7 @@ function spawnEnemy(x, y, type, args)
     function enemy:wanderUpdate(dt)
         if self.state < 1 or self.state >= 2 or self.dizzyTimer > 0 then return end
         if self.wanderTimer > 0 then self.wanderTimer = self.wanderTimer - dt end
-        if self.wnaderBufferTimer > 0 then self.wnaderBufferTimer = self.wanderBufferTimer - dt end
-
+        if self.wanderBufferTimer > 0 then self.wanderBufferTimer = self.wanderBufferTimer - dt end
         if self.wanderTimer < 0 then
             self.state = 1.1
             self.wanderTimer = 0
@@ -92,9 +91,9 @@ function spawnEnemy(x, y, type, args)
         end
 
         if self.state == 1.1 and self.physics then
-            self.physics:setX(self.physics:getX() + self.wanderDir.x + self.wanderSpeed*dt)
-            self.physics:setY(self.physics:getY() + self.wanderDir.y + self.wanderSpeed*dt)
-        
+            self.physics:setX(self.physics:getX() + self.wanderDir.x * self.wanderSpeed * dt)
+            self.physics:setY(self.physics:getY() + self.wanderDir.y * self.wanderSpeed * dt)
+
             if distanceBetween(self.physics:getX(), self.physics:getY(), self.startX, self.startY) > self.wanderRadius and self.wanderBufferTimer <= 0 then
                 self.state = 1
                 self.wanderTimer = 1 + math.random(0.1, 0.8)

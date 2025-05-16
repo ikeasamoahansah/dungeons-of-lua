@@ -1,7 +1,9 @@
 function requireAll()
     require('src/startup/resources')
     require('src/sounds/sound')
+    
     require('src/utils/cam')
+    require('src/utils/utils')
 
     require('src/levels/loadMap')
 
