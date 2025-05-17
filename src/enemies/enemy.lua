@@ -182,7 +182,7 @@ function spawnEnemy(x, y, type, args)
             end
         end
 
-        self.wanderUpdate(dt)
+        self:wanderUpdate(dt)
     end
 
     table.insert(enemies, enemy)
