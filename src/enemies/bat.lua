@@ -26,7 +26,7 @@ local function batInit(enemy, x, y, args)
     enemy.floatY = 0
     enemy.floatMax = 1.5
 
-    enemy.scaleX = 3
+    enemy.scaleX = 1
     enemy.scaleY = 1
     -- if math.random() < 0.5 then enemy.scaleX = -1 end
 
@@ -34,12 +34,12 @@ local function batInit(enemy, x, y, args)
         enemy:moveLogic(dt)
         local px, py = player.collider:getPosition()
         local ex, ey = self.physics:getPosition()
-        -- self:setScaleX()
+        self:setScaleX()
     end
 
     function enemy:draw()
         local ex, ey = self.physics:getPosition()
-        self.anim:draw(self.sprite, ex, ey-self.floatY, nil, self.scaleX, self.scaleY, 8, 8)
+        self.anim:draw(self.sprite, ex, ey-self.floatY, nil, math.abs(self.scaleX * 3), self.scaleY, 8, 8)
     end
 
     function enemy:die()

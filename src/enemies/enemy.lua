@@ -13,6 +13,8 @@ function spawnEnemy(x, y, type, args)
     enemy.chase = true
 
     enemy.dizzyTimer = 0
+    enemy.animTimer = 0
+    enemy.stunTimer = 0
     
     -- enemy state:
     -- 0: idle, standing
@@ -42,27 +44,95 @@ function spawnEnemy(x, y, type, args)
 
     enemy = init(enemy, x, y, args)
 
-    -- function enemy:setScaleX()
-    --     local px, py = player.collider:getPosition()
-    --     local ex, ey = self.physics:getPosition()
+    function enemy:setScaleX()
+        local px, py = player.collider:getPosition()
+        local ex, ey = self.physics:getPosition()
 
-    --     if self.state >= 99 then
-    --         if px < ex then
-    --             self.scaleX = -1
-    --         else
-    --             self.scaleX = 1
-    --         end
-    --     elseif self.state >= 1 and  self.state < 2 then
-    --         if self.wanderDir.x < 0 then
-    --             self.scaleX = -1
-    --         else
-    --             self.scaleX = 1
-    --         end
-    --     end
-    -- end
+        if self.state >= 99 then
+            if px < ex then
+                self.scaleX = -1
+            else
+                self.scaleX = 1
+            end
+        elseif self.state >= 1 and  self.state < 2 then
+            if self.wanderDir.x < 0 then
+                self.scaleX = -1
+            else
+                self.scaleX = 1
+            end
+        end
+    end
+
+    function enemy:lookForPlayer()
+        -- check if enemy exists
+        if self.physics == nil then return false end
+        local ex = self.physics:getX()
+        local ey = self.physics:getY()
+
+        -- 'listening threshold'
+        if distanceBetween(ex, ey, player.collider:getX(), player.collider:getY()) < 30 then
+            return true
+        end
+
+        -- look at player if and only if enemy is facing player's direction
+        if self.state >= 1 and self.state < 2 then
+            if self.scaleX == 1 and ex > player.collider:getX() then return false end
+            if self.scaleX == -1 and ex < player.collider:getX() then return false end
+        end
+
+        local toPlayerVec = getPlayerToSelfVector(ex, ey):rotateInplace(math.pi)
+
+        -- line of queries towards the player
+
+        for i=1,18 do
+            local qRad = 3
+            local qx = ex + toPlayerVec.x * i * qRad
+            local qy = ey + toPlayerVec.y * i * qRad
+
+
+            local hitPlayer = world:queryCircleArea(qx, qy, qRad, {'player'})
+            if #hitPlayer > 0 then
+                return true
+            end
+
+            local obstacles = world:queryCircleArea(qx, qy, qRad, {'wall'})
+            if #obstacles > 0 then
+                return false
+            end
+        end
+
+        return false
+    end
     
     function enemy:moveLogic(dt, stiff)
-        self.anim:update(dt * self.moving)
+
+        if self.stunTimer > 0 then
+            self.stunTimer = self.stunTimer - dt
+        end
+        if self.stunTimer < 0 then
+            self.stunTimer = 0
+            self.physics:setLinearVelocity(0, 0)
+        end
+
+        if self.dizzyTimer > 0 then
+            self.dizzyTimer = self.dizzyTimer - dt
+        end
+        if self.dizzyTimer < 0 then
+            self.dizzyTimer = 0
+        end
+        
+        if self.stunTimer == 0 and self.dizzyTimer == 0 then
+            self.anim:update(dt * self.moving)
+            local px, py = player.collider:getPosition()
+            local ex, ey = self.physics:getPosition()
+
+            if self.state < 99 then
+                if self:lookForPlayer() then
+                    self.state = 99 -- alert
+                    self.animTimer = 0.5
+                end
+            end
+        end
     end
 
     function enemy:wanderUpdate(dt)
@@ -103,6 +173,15 @@ function spawnEnemy(x, y, type, args)
 
     -- general update for all enemies
     function enemy:genericUpdate(dt)
+        
+        if self.animTimer > 0 then
+            self.animTimer = self.animTimer - dt
+            if self.animTimer < 0 then
+                if self.state == 99 then self.state = 100 end -- Begin attacking
+                self.animTimer = 0
+            end
+        end
+
         self.wanderUpdate(dt)
     end
 
