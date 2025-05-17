@@ -173,7 +173,7 @@ function spawnEnemy(x, y, type, args)
 
     -- general update for all enemies
     function enemy:genericUpdate(dt)
-        
+
         if self.animTimer > 0 then
             self.animTimer = self.animTimer - dt
             if self.animTimer < 0 then
@@ -191,7 +191,7 @@ end
 function enemies:update(dt)
     for i, e in ipairs(self) do
         e:update(dt)
-        e:wanderUpdate(dt)
+        e:genericUpdate(dt)
     end
    
     -- remove dead enemies in reverse order
