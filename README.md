@@ -23,6 +23,8 @@ Requirements for the software and other tools to build, test and push
 - assets DIR <- assets used in the game
 - src DIR <- contains other files and environments
 
+- TODO
+
 ## License
 
 This project is licensed under the [CC0 1.0 Universal](LICENSE)
