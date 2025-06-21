@@ -1,7 +1,7 @@
 
 # Dungeons-of-Lua
 
-2D GAME
+2D Adventure GAME
 
 
 ## Getting Started
