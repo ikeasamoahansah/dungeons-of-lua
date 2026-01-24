@@ -6,6 +6,10 @@ player.grid = anim8.newGrid(24, 32, sprites.playerSheet:getWidth(), sprites.play
 player.collider = world:newBSGRectangleCollider(960, 1890, 30, 50, 10)
 player.collider:setFixedRotation(true)
 
+player.health = 10
+player.maxHealth = 10
+player.invincibleTimer = 0
+
 player.animations = {}
 player.animations.up = anim8.newAnimation(player.grid('1-3', 1), 0.2)
 player.animations.down = anim8.newAnimation(player.grid('1-3', 3), 0.2)
@@ -18,8 +22,24 @@ player.anim = player.animations.up
 -- player.animations.attack.left = anim8.newAnimation(player.grid('1-5', 8), 0.2)
 -- player.animations.attack.right = anim8.newAnimation(player.grid('1-5', 6), 0.2)
 
+function player:takeDamage(amount)
+    if self.invincibleTimer > 0 then return end
+    self.health = self.health - amount
+    self.invincibleTimer = 1
+    print("Player took damage! Health: " .. self.health)
+    if self.health <= 0 then
+        print("Player died!")
+        -- TODO: specific death logic
+        gameState = 2 -- Set a new game state for "game over"
+        print("Game Over!")
+    end
+end
 
 function playerUpdate(dt)
+    if player.invincibleTimer > 0 then
+        player.invincibleTimer = player.invincibleTimer - dt
+    end
+
     local keyPressed = false
     -- collider
     local vx = 0

@@ -13,11 +13,6 @@ function gameStart()
 
     love.graphics.setDefaultFilter("nearest", "nearest")
 
-    -- TODO:
-    -- Add enemies
-    -- Configure shaders
-    -- Make enemies attack player within radius
-
     require('src/startup/require')
     requireAll()
     
@@ -29,6 +24,7 @@ function initGlobals()
     -- game state
     -- 0: main menu
     -- 1: gameplay
+    -- 2: Game Over!
     
     gameState = 0
     globalStun = 0

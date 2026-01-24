@@ -1,4 +1,3 @@
--- TODO:
 -- generate enemies
 
 enemies = {}
@@ -135,6 +134,12 @@ function spawnEnemy(x, y, type, args)
 
             if self.state >= 100 then
                 self.dir = vector(px - ex, py - ey):normalized() * self.magnitude
+
+                if distanceBetween(px, py, ex, ey) < 30 then
+                    if player.takeDamage then
+                        player:takeDamage(1)
+                    end
+                end
 
                 if self.chase then
                     if stiff then -- Stiff (grounded) movement
