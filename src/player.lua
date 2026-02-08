@@ -1,4 +1,4 @@
--- restrcututring needed
+-- restructuring needed
 player = {}
 player.x = 0
 player.y = 0
