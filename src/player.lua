@@ -18,10 +18,11 @@ player.animations.left = anim8.newAnimation(player.grid('1-3', 4), 0.2)
 player.animations.right = anim8.newAnimation(player.grid('1-3', 2), 0.2)
 
 player.anim = player.animations.up
--- player.animations.attack.up = anim8.newAnimation(player.grid('1-5', 5), 0.2)
--- player.animations.attack.down = anim8.newAnimation(player.grid('1-5', 7), 0.2)
--- player.animations.attack.left = anim8.newAnimation(player.grid('1-5', 8), 0.2)
--- player.animations.attack.right = anim8.newAnimation(player.grid('1-5', 6), 0.2)
+
+player.animations.swordUp = anim8.newAnimation(player.grid('1-5', 5), 0.2)
+player.animations.swordDown = anim8.newAnimation(player.grid('1-5', 7), 0.2)
+player.animations.swordLeft = anim8.newAnimation(player.grid('1-5', 8), 0.2)
+player.animations.swordRight = anim8.newAnimation(player.grid('1-5', 6), 0.2)
 
 function player:takeDamage(amount)
     if self.invincibleTimer > 0 then return end
@@ -46,22 +47,59 @@ function playerUpdate(dt)
     local vx = 0
     local vy = 0
 
-    if love.keyboard.isDown("right") then
+    -- Attack animations
+    local isAttacking = love.keyboard.isDown("space") -- You can change this key as needed
+
+    if love.keyboard.isDown("right") or love.keyboard.isDown("d") then
         vx = player.speed
-        player.anim = player.animations.right
+        if isAttacking then
+            player.anim = player.swordRight
+        else
+            player.anim = player.animations.right
+        end
         keyPressed = true
-    elseif love.keyboard.isDown("left") then
+    elseif love.keyboard.isDown("left") or love.keyboard.isDown("a") then
         vx = player.speed * -1
-        player.anim = player.animations.left
+        if isAttacking then
+            player.anim = player.swordLeft
+        else
+            player.anim = player.animations.left
+        end
         keyPressed = true
-    elseif love.keyboard.isDown("down") then
+    elseif love.keyboard.isDown("down") or love.keyboard.isDown("s") then
         vy = player.speed
-        player.anim = player.animations.down
+        if isAttacking then
+            player.anim = player.swordDown
+        else
+            player.anim = player.animations.down
+        end
         keyPressed = true
-    elseif love.keyboard.isDown("up") then
+    elseif love.keyboard.isDown("up") or love.keyboard.isDown("w") then
         vy = player.speed * -1
-        player.anim = player.animations.up
+        if isAttacking then
+            player.anim = player.swordUp
+        else
+            player.anim = player.animations.up
+        end
         keyPressed = true
+    else
+        -- If player is just attacking without moving, update animation to last faced direction
+        if isAttacking then
+            -- Assuming last direction is preserved in self.lastDirection
+            local lastDir = player.lastDirection or "down"
+            player.anim = player.animations.sword[lastDir]
+        end
+    end
+
+    -- Store last direction for attack-only
+    if love.keyboard.isDown("right") or love.keyboard.isDown("d") then
+        player.lastDirection = "right"
+    elseif love.keyboard.isDown("left") or love.keyboard.isDown("a") then
+        player.lastDirection = "left"
+    elseif love.keyboard.isDown("down") or love.keyboard.isDown("s") then
+        player.lastDirection = "down"
+    elseif love.keyboard.isDown("up") or love.keyboard.isDown("w") then
+        player.lastDirection = "up"
     end
 
     player.collider:setLinearVelocity(vx, vy)
