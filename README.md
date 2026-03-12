@@ -24,6 +24,7 @@ Requirements for the software and other tools to build, test and push
 - src DIR <- contains other files and environments
 
 - TODO: publish v0.0.1
+- health bars
 
 ## License
 
