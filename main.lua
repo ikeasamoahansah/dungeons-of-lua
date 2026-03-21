@@ -19,6 +19,10 @@ function love.draw()
     cam:detach()
 
     love.graphics.setShader()
+
+    if gameState == 2 then
+        drawGameOver()
+    end
 end
 
 function love.keypressed(key)
@@ -28,5 +32,9 @@ function love.keypressed(key)
     
     if key == "z" then
         sounds.dungeon:stop()
+    end
+
+    if key == "r" and gameState == 2 then
+        love.event.quit("restart")
     end
 end

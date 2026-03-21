@@ -38,6 +38,7 @@ function player:takeDamage(amount)
 end
 
 function playerUpdate(dt)
+    if gameState == 2 then return end -- guard checks
     if player.invincibleTimer > 0 then
         player.invincibleTimer = player.invincibleTimer - dt
     end

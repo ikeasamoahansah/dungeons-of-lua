@@ -14,3 +14,7 @@ sprites.enemies.boss = love.graphics.newImage('assets/sprites/enemies/boss.png')
 -- shaders = {}
 -- shaders.vignette = love.graphics.newShader('assets/shaders/vignette.glsl')
 
+-- fonts
+fonts = {}
+fonts.large = love.graphics.newFont(48)
+fonts.medium = love.graphics.newFont(24)
