@@ -11,6 +11,13 @@ function gameStart()
 
     world = wf.newWorld(0, 0)
 
+    world:addCollisionClass('player')
+    world:addCollisionClass('enemy')
+    world:addCollisionClass('wall')
+    world:addCollisionClass('projectile', {
+        ignores = {'enemy', 'projectile'}  -- projectiles dont hit each other or enemies
+    })
+
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     require('src/startup/require')

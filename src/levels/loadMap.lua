@@ -21,6 +21,7 @@ function loadMap(mapName, destX, destY)
         for i, obj in pairs(gameMap.layers["wall"].objects) do
             local wall = world:newRectangleCollider(obj.x, obj.y, obj.width, obj.height)
             wall:setType("static")
+            wall:setCollisionClass("wall")
             table.insert(walls, wall)
         end
     end

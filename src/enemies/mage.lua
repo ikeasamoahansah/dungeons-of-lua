@@ -38,11 +38,24 @@ local function mageInit(enemy, x, y, args)
     enemy.scaleY = 1.5
     -- if math.random() < 0.5 then enemy.scaleX = -1 end
 
+    -- Add shoot timer
+    enemy.shootTimer = 0
+    enemy.shootCooldown = 2  -- seconds between shots
+
     function enemy:update(dt)
         enemy:moveLogic(dt)
         local px, py = player.collider:getPosition()
         local ex, ey = self.physics:getPosition()
         self:setScaleX()
+
+        -- Shoot when in attack state
+        if self.state >= 100 then
+            self.shootTimer = self.shootTimer + dt
+            if self.shootTimer >= self.shootCooldown then
+                self.shootTimer = 0
+                spawnProjectile(ex, ey, px, py, 240, 1, "enemy")
+            end
+        end
     end
 
     function enemy:draw()

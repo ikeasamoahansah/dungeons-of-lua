@@ -10,6 +10,7 @@ function requireAll()
     require('src/enemies/enemy')
 
     require('src/player')
+    require('src/entities/projectile')
     require('src/update')
     require('src/draw')
 end

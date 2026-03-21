@@ -6,6 +6,7 @@ player.speed = 150
 player.grid = anim8.newGrid(24, 32, sprites.playerSheet:getWidth(), sprites.playerSheet:getHeight())
 player.collider = world:newBSGRectangleCollider(960, 1890, 30, 50, 10)
 player.collider:setFixedRotation(true)
+player.collider:setCollisionClass("player")
 
 player.health = 10
 player.maxHealth = 10
@@ -116,7 +117,7 @@ end
 
 function drawPlayer()
     local px, py = player.x, player.y
-    
+
     if player.hitFlashTimer > 0 then
         -- Bright white flash on hit
         love.graphics.setColor(1, 1, 1, 1)

@@ -34,11 +34,31 @@ local function bossInit(enemy, x, y, args)
     enemy.scaleY = 1.5
     -- if math.random() < 0.5 then enemy.scaleX = -1 end
 
+    enemy.shootTimer = 0
+    enemy.shootCooldown = 2.5 -- seconds between shots
+
     function enemy:update(dt)
         enemy:moveLogic(dt)
         local px, py = player.collider:getPosition()
         local ex, ey = self.physics:getPosition()
         self:setScaleX()
+
+        if self.state >= 100 then
+            self.shootTimer = self.shootTimer + dt
+            if self.shootTimer >= self.shootCooldown then
+                self.shootTimer = 0
+    
+                -- Spread shot: 3 projectiles in a cone
+                local baseAngle = math.atan2(py - ey, px - ex)
+                local spread = 0.3  -- radians between shots
+                for i = -1, 1 do
+                    local angle = baseAngle + (i * spread)
+                    local tx = ex + math.cos(angle) * 100
+                    local ty = ey + math.sin(angle) * 100
+                    spawnProjectile(ex, ey, tx, ty, 500, 1, "enemy")
+                end
+            end
+        end
     end
 
     function enemy:draw()

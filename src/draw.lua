@@ -11,6 +11,7 @@ function drawCamera()
 
     drawPlayer()
     enemies:draw()
+    drawProjectiles()
 end
 
 
