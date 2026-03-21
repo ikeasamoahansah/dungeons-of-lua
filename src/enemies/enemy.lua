@@ -69,7 +69,7 @@ function spawnEnemy(x, y, type, args)
         local ey = self.physics:getY()
 
         -- 'listening threshold'
-        if distanceBetween(ex, ey, player.collider:getX(), player.collider:getY()) < 30 then
+        if distanceBetween(ex, ey, player.collider:getX(), player.collider:getY()) < 64 then
             return true
         end
 
@@ -83,7 +83,7 @@ function spawnEnemy(x, y, type, args)
 
         -- line of queries towards the player
 
-        for i=1,18 do
+        for i=1,40 do
             local qRad = 3
             local qx = ex + toPlayerVec.x * i * qRad
             local qy = ey + toPlayerVec.y * i * qRad
