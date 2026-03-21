@@ -83,7 +83,9 @@ function spawnEnemy(x, y, type, args)
 
         -- line of queries towards the player
 
-        for i=1,40 do
+        local steps = math.floor(self.viewDistance / 3)
+
+        for i=1, steps do
             local qRad = 3
             local qx = ex + toPlayerVec.x * i * qRad
             local qy = ey + toPlayerVec.y * i * qRad
