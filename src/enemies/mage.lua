@@ -17,7 +17,7 @@ local function mageInit(enemy, x, y, args)
     enemy.maxSpeed = 80
     enemy.magnitude = 450
     enemy.dir = vector(0, 1)
-    enemy.viewDistance = 100
+    enemy.viewDistance = 150
 
     enemy.grid = anim8.newGrid(20, 24, enemy.sprite:getWidth(), enemy.sprite:getHeight())
     enemy.animations = {}
