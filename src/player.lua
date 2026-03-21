@@ -10,6 +10,7 @@ player.collider:setFixedRotation(true)
 player.health = 10
 player.maxHealth = 10
 player.invincibleTimer = 0
+player.hitFlashTimer = 0
 
 player.animations = {}
 player.animations.up = anim8.newAnimation(player.grid('1-3', 1), 0.2)
@@ -28,12 +29,9 @@ function player:takeDamage(amount)
     if self.invincibleTimer > 0 then return end
     self.health = self.health - amount
     self.invincibleTimer = 1
-    print("Player took damage! Health: " .. self.health)
+    self.hitFlashTimer = 0.1 -- short white flash on hit
     if self.health <= 0 then
-        print("Player died!")
-        -- TODO: specific death logic
         gameState = 2 -- Set a new game state for "game over"
-        print("Game Over!")
     end
 end
 
@@ -41,6 +39,10 @@ function playerUpdate(dt)
     if gameState == 2 then return end -- guard checks
     if player.invincibleTimer > 0 then
         player.invincibleTimer = player.invincibleTimer - dt
+    end
+
+    if player.hitFlashTimer > 0 then
+        player.hitFlashTimer = player.hitFlashTimer - dt
     end
 
     local keyPressed = false
@@ -114,5 +116,25 @@ end
 
 function drawPlayer()
     local px, py = player.x, player.y
-    player.anim:draw(sprites.playerSheet, px, py, nil, 1.5, nil, 12, 16)
+    
+    if player.hitFlashTimer > 0 then
+        -- Bright white flash on hit
+        love.graphics.setColor(1, 1, 1, 1)
+        player.anim:draw(sprites.playerSheet, px, py, nil, 1.5, nil, 12, 16)
+        love.graphics.setColor(1, 1, 1, 1)
+        -- Draw white overlay on top
+        love.graphics.setBlendMode("add")
+        love.graphics.setColor(1, 1, 1, 0.8)
+        player.anim:draw(sprites.playerSheet, px, py, nil, 1.5, nil, 12, 16)
+        love.graphics.setBlendMode("alpha")
+    elseif player.invincibleTimer > 0 then
+        local flash = math.sin(player.invincibleTimer * 20) > 0
+        love.graphics.setColor(flash and {1, 0.3, 0.3, 1} or {1, 1, 1, 0.2})
+        player.anim:draw(sprites.playerSheet, px, py, nil, 1.5, nil, 12, 16)
+    else
+        love.graphics.setColor(1, 1, 1, 1)
+        player.anim:draw(sprites.playerSheet, px, py, nil, 1.5, nil, 12, 16)
+    end
+
+    love.graphics.setColor(1, 1, 1, 1)
 end
