@@ -20,6 +20,9 @@ function love.draw()
 
     love.graphics.setShader()
 
+    -- Draw HUD
+    drawHUD()
+
     if gameState == 2 then
         drawGameOver()
     end
