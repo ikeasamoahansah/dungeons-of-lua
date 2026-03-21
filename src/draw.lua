@@ -30,7 +30,7 @@ function drawGameOver()
     -- Restart hint
     love.graphics.setColor(1, 1, 1, 0.8)
     love.graphics.setFont(fonts.medium)
-    love.graphics.printf("Press R to restart", 0, h / 2 + 10, w, "center")
+    love.graphics.printf("Press 'R' to restart", 0, h / 2 + 10, w, "center")
 
     -- Reset color and font to default
     love.graphics.setColor(1, 1, 1, 1)
