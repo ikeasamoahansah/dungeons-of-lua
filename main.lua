@@ -41,6 +41,9 @@ function love.keypressed(key)
     if key == "space" and gameState ~= 2 then
         player:startAttack()
     end
+    if key == "x" and gameState ~= 2 then
+        player:startThrow()
+    end
 
     if key == "r" and gameState == 2 then
         love.event.quit("restart")

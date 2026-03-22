@@ -29,6 +29,18 @@ player.animations.attackRight = anim8.newAnimation(player.grid('1-5', 6), 0.1, '
 player.anim = player.animations.up
 player.lastDirection = "up"
 
+-- Add these with the other animations
+player.animations.throwUp    = anim8.newAnimation(player.grid(16, 5), 0.15, 'pauseAtEnd')
+player.animations.throwDown  = anim8.newAnimation(player.grid(16, 7), 0.15, 'pauseAtEnd')
+player.animations.throwLeft  = anim8.newAnimation(player.grid(16, 8), 0.15, 'pauseAtEnd')
+player.animations.throwRight = anim8.newAnimation(player.grid(16, 6), 0.15, 'pauseAtEnd')
+
+-- Throw state
+player.throwCooldown    = 0
+player.throwCooldownMax = 0.4
+player.throwDamage      = 1
+player.throwSpeed       = 200
+
 -- Attack state
 player.attacking = false
 player.attackTimer = 0
@@ -103,6 +115,42 @@ function player:doMeleeHit()
     end
 end
 
+function player:startThrow()
+    if player.throwCooldown > 0 then return end
+
+    player.throwCooldown = player.throwCooldownMax
+    player.attacking = true
+    player.attackTimer = player.attackDuration
+
+    -- Switch to throw animation for current direction
+    local dir = player.lastDirection
+    local animKey = "throw" .. dir:sub(1,1):upper() .. dir:sub(2)
+    player.anim = player.animations[animKey]
+    player.anim:gotoFrame(1)
+    player.anim:resume()
+
+    -- Spawn projectile in facing direction
+    local px, py = player.collider:getPosition()
+
+    local dirOffsets = {
+        up    = { 0, -1},
+        down  = { 0,  1},
+        left  = {-1,  0},
+        right = { 1,  0},
+    }
+
+    local d = dirOffsets[player.lastDirection]
+    local tx = px + d[1] * 100
+    local ty = py + d[2] * 100
+
+    spawnPlayerProjectile(px, py, tx, ty, player.throwSpeed, player.throwDamage)
+end
+
+-- Tick throw cooldown in playerUpdate, add inside playerUpdate:
+-- if player.throwCooldown > 0 then
+--     player.throwCooldown = player.throwCooldown - dt
+-- end
+
 function playerUpdate(dt)
     -- if gameState == 2 then return end -- guard checks
     if player.invincibleTimer > 0 then
@@ -113,6 +161,10 @@ function playerUpdate(dt)
         player.hitFlashTimer = player.hitFlashTimer - dt
     end
 
+    if player.throwCooldown > 0 then
+        player.throwCooldown = player.throwCooldown - dt
+    end
+
     if player.attackCooldown > 0 then
         player.attackCooldown = player.attackCooldown - dt
     end
@@ -120,6 +172,8 @@ function playerUpdate(dt)
         player.attackTimer = player.attackTimer - dt
         if player.attackTimer <= 0 then
             player.attacking = false  -- attack window over
+            -- Return to the movement animation set after one-shot attack/throw anims.
+            player.anim = player.animations[player.lastDirection]
         end
     end
 
@@ -157,6 +211,8 @@ function playerUpdate(dt)
 
     -- Idle frame when not moving and not attacking
     if not moved and not player.attacking then
+        -- Ensure idle frame is picked from looping walk anims (they all have frame 2).
+        player.anim = player.animations[player.lastDirection]
         player.anim:gotoFrame(2)
     end
 

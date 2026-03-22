@@ -13,6 +13,7 @@ function drawCamera()
     enemies:draw()
     drawEnemyHealthBars()
     drawProjectiles()
+    drawPlayerProjectiles()
 end
 
 

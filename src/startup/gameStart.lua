@@ -17,6 +17,9 @@ function gameStart()
     world:addCollisionClass('projectile', {
         ignores = {'enemy', 'projectile'}  -- projectiles dont hit each other or enemies
     })
+    world:addCollisionClass('playerProjectile', {
+        ignores = {'player', 'playerProjectile'}  -- phases through player and other player shots
+    })
 
     love.graphics.setDefaultFilter("nearest", "nearest")
 
