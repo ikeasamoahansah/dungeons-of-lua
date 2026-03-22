@@ -272,20 +272,37 @@ end
 
 function enemies:update(dt)
     for i, e in ipairs(self) do
-        e:update(dt)
-        e:genericUpdate(dt)
-        if e.hitFlashTimer and e.hitFlashTimer > 0 then
-            e.hitFlashTimer = e.hitFlashTimer - dt
-            if e.hitFlashTimer < 0 then e.hitFlashTimer = 0 end
+        if not e.dead then
+            e:update(dt)
+            e:genericUpdate(dt)
+
+            if e.hitFlashTimer and e.hitFlashTimer > 0 then
+                e.hitFlashTimer = e.hitFlashTimer - dt
+                if e.hitFlashTimer < 0 then e.hitFlashTimer = 0 end
+            end
+        else
+            -- Death blink countdown
+            if e.deathTimer and e.deathTimer > 0 then
+                e.deathTimer = e.deathTimer - dt
+                e.blinkTimer = (e.blinkTimer or 0) + dt
+
+                -- Blink faster as deathTimer runs out
+                local blinkRate = 0.1 + (e.deathTimer / e.deathTimerMax) * 0.2
+                if e.blinkTimer >= blinkRate then
+                    e.blinkTimer = 0
+                    e.blinkVisible = not e.blinkVisible
+                end
+            end
         end
     end
 
    
     -- remove dead enemies in reverse order
     for i=#enemies,1,-1 do
-        if enemies[i].dead then
-            if enemies[i].physics ~= nil then
-                enemies[i].physics:destroy()
+        local e = enemies[i]
+        if e.dead and (not e.deathTimer or e.deathTimer <= 0) then
+            if e.physics ~= nil then
+                e.physics:destroy()
             end
             table.remove(enemies, i)
         end
@@ -294,7 +311,22 @@ end
 
 function enemies:draw()
     for i, e in ipairs(self) do
+        -- Skip draw on blink-off frames
+        if e.dead and e.blinkVisible == false then
+            goto continue
+        end
+
+        -- Tint dead enemies gray
+        if e.dead then
+            love.graphics.setColor(0.6, 0.6, 0.6, 0.7)
+        end
+
         e:draw()
+
+        -- Reset color after each enemy
+        love.graphics.setColor(1, 1, 1, 1)
+
+        ::continue::
     end
 end
 
@@ -303,9 +335,9 @@ function enemies:takeDamage(enemy, amount)
     if enemy.stunTimer and enemy.stunTimer > 0 then return end
 
     enemy.health = enemy.health - amount
-    enemy.hitFlashTimer = 0.15  -- triggers flash in drawEnemyHealthBars
+    enemy.hitTimer = 0.15
 
-    -- Knockback away from player
+    -- Knockback
     local px, py = player.collider:getPosition()
     local ex, ey = enemy.physics:getPosition()
     local dx = ex - px
@@ -318,11 +350,21 @@ function enemies:takeDamage(enemy, amount)
             (dx / dist) * knockback,
             (dy / dist) * knockback
         )
-        enemy.stunTimer = 0.2  -- brief stun so enemy cant immediately move back
+        enemy.stunTimer = 0.2
     end
 
     if enemy.health <= 0 then
         enemy:die()
         enemy.dead = true
+
+        -- Freeze physics so corpse doesn't slide around
+        enemy.physics:setLinearVelocity(0, 0)
+        enemy.physics:setType("static")
+
+        -- Start death blink timer
+        enemy.deathTimerMax = 2.0  -- seconds before disappearing
+        enemy.deathTimer = enemy.deathTimerMax
+        enemy.blinkTimer = 0
+        enemy.blinkVisible = true
     end
 end
