@@ -1,6 +1,34 @@
 -- generate enemies
 
+local SEPARATION_RADIUS = 28
+local SEPARATION_STRENGTH = 400
+
 enemies = {}
+
+-- Returns a vector pushing this enemy away from nearby allies
+local function getSeparationForce(self)
+    local fx, fy = 0, 0
+    local ex, ey = self.physics:getPosition()
+    local radius = self.separationRadius or SEPARATION_RADIUS
+
+    for _, other in ipairs(enemies) do
+        if other ~= self and other.physics then
+            local ox, oy = other.physics:getPosition()
+            local dx = ex - ox
+            local dy = ey - oy
+            local dist = math.sqrt(dx*dx + dy*dy)
+            if dist < radius and dist > 0 then
+                -- Stronger push the closer they are
+                local t = 1 - (dist / radius)
+                local force = SEPARATION_STRENGTH * t * t
+
+                fx = fx + (dx / dist) * force
+                fy = fy + (dy / dist) * force
+            end
+        end
+    end
+    return fx, fy
+end
 
 -- Function to spawn enemy
 function spawnEnemy(x, y, type, args)
@@ -135,9 +163,33 @@ function spawnEnemy(x, y, type, args)
             end
 
             if self.state >= 100 then
-                self.dir = vector(px - ex, py - ey):normalized() * self.magnitude
+                local dx = px - ex
+                local dy = py - ey
+                local dist = math.sqrt(dx*dx + dy*dy)
 
-                if distanceBetween(px, py, ex, ey) < 30 then
+                -- Base direction towards player
+                local dirX = dx / (dist + 0.001)
+                local dirY = dy / (dist + 0.001)
+
+                -- Flank offset: odd-indexed enemies circle left, even circle right
+                -- self.enemyIndex is assigned at spawn (see below)
+                if self.enemyIndex and self.enemyIndex % 2 == 0 then
+                    -- Rotate direction 45 degrees right
+                    local angle = math.pi / 4
+                    local c, s = math.cos(angle), math.sin(angle)
+                    dirX, dirY = c*dirX - s*dirY, s*dirX + c*dirY
+                else
+                    -- Rotate direction 45 degrees left
+                    local angle = -math.pi / 4
+                    local c, s = math.cos(angle), math.sin(angle)
+                    dirX, dirY = c*dirX - s*dirY, s*dirX + c*dirY
+                end
+
+                -- Separation from other enemies
+                local sepX, sepY = getSeparationForce(self)
+                self.dir = vector(dirX * self.magnitude + sepX, dirY * self.magnitude + sepY)
+
+                if dist < 30 then
                     if player.takeDamage then
                         player:takeDamage(1)
                     end
@@ -210,6 +262,7 @@ function spawnEnemy(x, y, type, args)
     end
 
     table.insert(enemies, enemy)
+    enemy.enemyIndex = #enemies  -- gives each enemy a unique index
 end
 
 function enemies:update(dt)

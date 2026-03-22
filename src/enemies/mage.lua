@@ -44,15 +44,18 @@ local function mageInit(enemy, x, y, args)
 
     function enemy:update(dt)
         enemy:moveLogic(dt)
-        local px, py = player.collider:getPosition()
-        local ex, ey = self.physics:getPosition()
         self:setScaleX()
-
+        
         -- Shoot when in attack state
         if self.state >= 100 then
             self.shootTimer = self.shootTimer + dt
             if self.shootTimer >= self.shootCooldown then
                 self.shootTimer = 0
+                
+                -- get fresh position at the moment of firing no cached value
+                local px, py = player.collider:getPosition()
+                local ex, ey = self.physics:getPosition()
+                
                 spawnProjectile(ex, ey, px, py, 240, 1, "enemy")
             end
         end

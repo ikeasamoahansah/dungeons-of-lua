@@ -13,17 +13,30 @@ function spawnProjectile(x, y, tx, ty, speed, damage, owner)
     local len = math.sqrt(dx*dx + dy*dy)
     if len == 0 then return end  -- guard against zero length
 
-    p.vx = (dx / len) * speed
-    p.vy = (dy / len) * speed
+    -- normalized direction to fix box2D issue
+    local ndx = dx / len
+    local ndy = dy / len
 
+    -- Spawn offset so projectile doesn't immediately collide with the enemy body
     -- Physics collider
-    p.physics = world:newCircleCollider(x, y, 3)
+    local spawnOffset = 10
+    p.physics = world:newCircleCollider(
+        x + ndx * spawnOffset,
+        y + ndy * spawnOffset,
+        3
+    )
     p.physics:setFixedRotation(true)
-    p.physics:setBullet(true)  -- better collision for fast objects
-    p.physics:setLinearVelocity(p.vx, p.vy)
     p.physics:setGravityScale(0)  -- no gravity pulling projectiles down
     p.physics:setCollisionClass("projectile")
     p.physics.parent = p
+    
+    -- Set velocity directly — this overwrites any inherited momentum
+    -- so direction is always exactly toward the target regardless of
+    -- which way the enemy is moving or facing
+    p.physics:setLinearVelocity(ndx * speed, ndy * speed)
+
+    p.dx = ndx
+    p.dy = ndy
 
     table.insert(projectiles, p)
 end

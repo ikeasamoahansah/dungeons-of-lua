@@ -18,6 +18,7 @@ local function bossInit(enemy, x, y, args)
     enemy.magnitude = 450
     enemy.dir = vector(0, 1)
     enemy.viewDistance = 150
+    enemy.separationRadius = 50
 
     enemy.grid = anim8.newGrid(20, 20, enemy.sprite:getWidth(), enemy.sprite:getHeight())    
     enemy.anim = anim8.newAnimation(enemy.grid('1-2', 1), 0.3)
@@ -39,15 +40,17 @@ local function bossInit(enemy, x, y, args)
 
     function enemy:update(dt)
         enemy:moveLogic(dt)
-        local px, py = player.collider:getPosition()
-        local ex, ey = self.physics:getPosition()
         self:setScaleX()
-
+        
         if self.state >= 100 then
             self.shootTimer = self.shootTimer + dt
             if self.shootTimer >= self.shootCooldown then
                 self.shootTimer = 0
-    
+                
+                -- Fresh position at fire time
+                local px, py = player.collider:getPosition()
+                local ex, ey = self.physics:getPosition()
+                
                 -- Spread shot: 3 projectiles in a cone
                 local baseAngle = math.atan2(py - ey, px - ex)
                 local spread = 0.3  -- radians between shots
