@@ -276,7 +276,7 @@ function enemies:update(dt)
         e:genericUpdate(dt)
         if e.hitFlashTimer and e.hitFlashTimer > 0 then
             e.hitFlashTimer = e.hitFlashTimer - dt
-            if e.hitTimer < 0 then e.hitTimer = 0 end
+            if e.hitFlashTimer < 0 then e.hitFlashTimer = 0 end
         end
     end
 

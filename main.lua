@@ -37,6 +37,11 @@ function love.keypressed(key)
         sounds.dungeon:stop()
     end
 
+    -- Attack on space
+    if key == "space" and gameState ~= 2 then
+        player:startAttack()
+    end
+
     if key == "r" and gameState == 2 then
         love.event.quit("restart")
     end

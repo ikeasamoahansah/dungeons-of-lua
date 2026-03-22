@@ -19,12 +19,24 @@ player.animations.down = anim8.newAnimation(player.grid('1-3', 3), 0.2)
 player.animations.left = anim8.newAnimation(player.grid('1-3', 4), 0.2)
 player.animations.right = anim8.newAnimation(player.grid('1-3', 2), 0.2)
 
-player.anim = player.animations.up
 
-player.animations.swordUp = anim8.newAnimation(player.grid('1-5', 5), 0.2)
-player.animations.swordDown = anim8.newAnimation(player.grid('1-5', 7), 0.2)
-player.animations.swordLeft = anim8.newAnimation(player.grid('1-5', 8), 0.2)
-player.animations.swordRight = anim8.newAnimation(player.grid('1-5', 6), 0.2)
+-- Each attack is 5 frames, plays once then returns to walk
+player.animations.attackUp    = anim8.newAnimation(player.grid('1-5', 5), 0.1, 'pauseAtEnd')
+player.animations.attackDown  = anim8.newAnimation(player.grid('1-5', 7), 0.1, 'pauseAtEnd')
+player.animations.attackLeft  = anim8.newAnimation(player.grid('1-5', 8), 0.1, 'pauseAtEnd')
+player.animations.attackRight = anim8.newAnimation(player.grid('1-5', 6), 0.1, 'pauseAtEnd')
+
+player.anim = player.animations.up
+player.lastDirection = "up"
+
+-- Attack state
+player.attacking = false
+player.attackTimer = 0
+player.attackDuration = 0.5   -- how long the full attack lasts
+player.attackCooldown = 0     -- prevents spam, ticks down
+player.attackCooldownMax = 0.4
+player.attackRange = 35       -- melee hit range in pixels
+player.attackDamage = 1
 
 function player:takeDamage(amount)
     if self.invincibleTimer > 0 then return end
@@ -50,6 +62,47 @@ function player:takeDamage(amount)
     end
 end
 
+function player:startAttack()
+    if self.attackCooldown > 0 then return end
+    self.attacking = true
+    self.attackTimer = self.attackDuration
+    self.attackCooldown = self.attackCooldownMax
+
+    -- Switch to attack animation for current direction
+    local dir = self.lastDirection
+    self.anim = self.animations["attack" .. dir:sub(1,1):upper() .. dir:sub(2)]
+    self.anim:gotoFrame(1)
+    self.anim:resume()
+
+    -- Hit enemies in front of player immediately on swing
+    self:doMeleeHit()
+end
+
+function player:doMeleeHit()
+    local px, py = self.collider:getPosition()
+
+    -- Offset the hit box in the facing direction
+    local offsets = {
+        up    = { 0, -self.attackRange},
+        down  = { 0,  self.attackRange},
+        left  = {-self.attackRange, 0},
+        right = { self.attackRange, 0},
+    }
+
+    local off = offsets[self.lastDirection]
+    local hitX = px + off[1]
+    local hitY = py + off[2]
+
+    -- Query a circle in front of the player for enemies
+    local hits = world:queryCircleArea(hitX, hitY, self.attackRange * 0.8, {'enemy'})
+    for _, collider in ipairs(hits) do
+        local enemy = collider.parent
+        if enemy and not enemy.dead then
+            enemies:takeDamage(enemy, self.attackDamage)
+        end
+    end
+end
+
 function playerUpdate(dt)
     -- if gameState == 2 then return end -- guard checks
     if player.invincibleTimer > 0 then
@@ -60,72 +113,53 @@ function playerUpdate(dt)
         player.hitFlashTimer = player.hitFlashTimer - dt
     end
 
-    local keyPressed = false
-    -- collider
-    local vx = 0
-    local vy = 0
-
-    -- Attack animations
-    local isAttacking = love.keyboard.isDown("space") -- You can change this key as needed
-
-    if love.keyboard.isDown("right") or love.keyboard.isDown("d") then
-        vx = player.speed
-        if isAttacking then
-            player.anim = player.swordRight
-        else
-            player.anim = player.animations.right
-        end
-        keyPressed = true
-    elseif love.keyboard.isDown("left") or love.keyboard.isDown("a") then
-        vx = player.speed * -1
-        if isAttacking then
-            player.anim = player.swordLeft
-        else
-            player.anim = player.animations.left
-        end
-        keyPressed = true
-    elseif love.keyboard.isDown("down") or love.keyboard.isDown("s") then
-        vy = player.speed
-        if isAttacking then
-            player.anim = player.swordDown
-        else
-            player.anim = player.animations.down
-        end
-        keyPressed = true
-    elseif love.keyboard.isDown("up") or love.keyboard.isDown("w") then
-        vy = player.speed * -1
-        if isAttacking then
-            player.anim = player.swordUp
-        else
-            player.anim = player.animations.up
-        end
-        keyPressed = true
-    else
-        -- If player is just attacking without moving, update animation to last faced direction
-        if isAttacking then
-            -- Assuming last direction is preserved in self.lastDirection
-            local lastDir = player.lastDirection or "down"
-            player.anim = player.animations.sword[lastDir]
+    if player.attackCooldown > 0 then
+        player.attackCooldown = player.attackCooldown - dt
+    end
+    if player.attackTimer > 0 then
+        player.attackTimer = player.attackTimer - dt
+        if player.attackTimer <= 0 then
+            player.attacking = false  -- attack window over
         end
     end
 
-    -- Store last direction for attack-only
-    if love.keyboard.isDown("right") or love.keyboard.isDown("d") then
-        player.lastDirection = "right"
-    elseif love.keyboard.isDown("left") or love.keyboard.isDown("a") then
-        player.lastDirection = "left"
-    elseif love.keyboard.isDown("down") or love.keyboard.isDown("s") then
-        player.lastDirection = "down"
-    elseif love.keyboard.isDown("up") or love.keyboard.isDown("w") then
-        player.lastDirection = "up"
+    -- collider
+    local vx = 0
+    local vy = 0
+    local moved = false
+
+    -- Movement — blocked during attack so player commits to the swing
+    if not player.attacking then
+        if love.keyboard.isDown("right") or love.keyboard.isDown("d") then
+            vx = player.speed
+            player.lastDirection = "right"
+            player.anim = player.animations.right
+            moved = true
+        elseif love.keyboard.isDown("left") or love.keyboard.isDown("a") then
+            vx = -player.speed
+            player.lastDirection = "left"
+            player.anim = player.animations.left
+            moved = true
+        elseif love.keyboard.isDown("down") or love.keyboard.isDown("s") then
+            vy = player.speed
+            player.lastDirection = "down"
+            player.anim = player.animations.down
+            moved = true
+        elseif love.keyboard.isDown("up") or love.keyboard.isDown("w") then
+            vy = -player.speed
+            player.lastDirection = "up"
+            player.anim = player.animations.up
+            moved = true
+        end
     end
 
     player.collider:setLinearVelocity(vx, vy)
 
-
-    if keyPressed == false then
+    -- Idle frame when not moving and not attacking
+    if not moved and not player.attacking then
         player.anim:gotoFrame(2)
     end
+
     player.anim:update(dt)
 end
 
