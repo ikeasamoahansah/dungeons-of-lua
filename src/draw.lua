@@ -11,6 +11,7 @@ function drawCamera()
 
     drawPlayer()
     enemies:draw()
+    drawEnemyHealthBars()
     drawProjectiles()
 end
 
@@ -69,4 +70,44 @@ function drawHUD()
     love.graphics.print("HP  " .. player.health .. "/" .. player.maxHealth, x, y + barHeight + 4)
 
     love.graphics.setColor(1, 1, 1, 1)
+end
+
+function drawEnemyHealthBars()
+    for _, e in ipairs(enemies) do
+        if e.physics and not e.dead then
+            local ex, ey = e.physics:getPosition()
+
+            local barWidth = 24
+            local barHeight = 3
+            local x = ex - barWidth / 2
+            local y = ey - 20  -- above enemy sprite
+
+            local healthPercent = math.max(0, e.health / (e.maxHealth or e.health))
+
+            -- Only show if damaged
+            if healthPercent >= 1 then goto continue end
+
+            -- Background
+            love.graphics.setColor(0.2, 0.2, 0.2, 0.8)
+            love.graphics.rectangle("fill", x, y, barWidth, barHeight, 1, 1)
+
+            -- Health fill — green to red based on percent
+            local r = 1 - healthPercent
+            local g = healthPercent
+            if e.hitFlashTimer and e.hitFlashTimer > 0 then
+                love.graphics.setColor(1, 1, 1, 1)  -- flash white on hit
+            else
+                love.graphics.setColor(r, g, 0.1, 1)
+            end
+            love.graphics.rectangle("fill", x, y, barWidth * healthPercent, barHeight, 1, 1)
+
+            -- Border
+            love.graphics.setColor(1, 1, 1, 0.3)
+            love.graphics.rectangle("line", x, y, barWidth, barHeight, 1, 1)
+
+            love.graphics.setColor(1, 1, 1, 1)
+
+            ::continue::
+        end
+    end
 end

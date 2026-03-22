@@ -12,7 +12,9 @@ local function bossInit(enemy, x, y, args)
         enemy.form = args.form
     end
 
-    enemy.health = 1
+    enemy.health = 5
+    enemy.maxHealth = 5
+    
     enemy.speed = 1
     enemy.maxSpeed = 80
     enemy.magnitude = 450

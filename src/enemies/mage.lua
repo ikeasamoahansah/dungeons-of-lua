@@ -12,7 +12,9 @@ local function mageInit(enemy, x, y, args)
         enemy.form = args.form
     end
 
-    enemy.health = 1
+    enemy.health = 2
+    enemy.maxHealth = 2
+    
     enemy.speed = 2
     enemy.maxSpeed = 80
     enemy.magnitude = 450

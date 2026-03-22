@@ -35,6 +35,7 @@ function spawnEnemy(x, y, type, args)
     local enemy = {}
     enemy.type = type
     enemy.health = 3
+    enemy.maxHealth = 3
     enemy.moving = 1
     enemy.dead = false
     enemy.chase = true
@@ -42,6 +43,9 @@ function spawnEnemy(x, y, type, args)
     enemy.dizzyTimer = 0
     enemy.animTimer = 0
     enemy.stunTimer = 0
+
+    enemy.invincibleTimer = 0
+    enemy.hitFlashTimer = 0
     
     -- enemy state:
     -- 0: idle, standing
@@ -270,7 +274,12 @@ function enemies:update(dt)
     for i, e in ipairs(self) do
         e:update(dt)
         e:genericUpdate(dt)
+        if e.hitFlashTimer and e.hitFlashTimer > 0 then
+            e.hitFlashTimer = e.hitFlashTimer - dt
+            if e.hitTimer < 0 then e.hitTimer = 0 end
+        end
     end
+
    
     -- remove dead enemies in reverse order
     for i=#enemies,1,-1 do
@@ -286,5 +295,34 @@ end
 function enemies:draw()
     for i, e in ipairs(self) do
         e:draw()
+    end
+end
+
+function enemies:takeDamage(enemy, amount)
+    if enemy.dead then return end
+    if enemy.stunTimer and enemy.stunTimer > 0 then return end
+
+    enemy.health = enemy.health - amount
+    enemy.hitFlashTimer = 0.15  -- triggers flash in drawEnemyHealthBars
+
+    -- Knockback away from player
+    local px, py = player.collider:getPosition()
+    local ex, ey = enemy.physics:getPosition()
+    local dx = ex - px
+    local dy = ey - py
+    local dist = math.sqrt(dx*dx + dy*dy)
+
+    if dist > 0 then
+        local knockback = 180
+        enemy.physics:setLinearVelocity(
+            (dx / dist) * knockback,
+            (dy / dist) * knockback
+        )
+        enemy.stunTimer = 0.2  -- brief stun so enemy cant immediately move back
+    end
+
+    if enemy.health <= 0 then
+        enemy:die()
+        enemy.dead = true
     end
 end

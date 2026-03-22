@@ -13,6 +13,8 @@ local function batInit(enemy, x, y, args)
     end
 
     enemy.health = 1
+    enemy.maxHealth = 1
+    
     enemy.speed = 3
     enemy.maxSpeed = 80
     enemy.magnitude = 450
