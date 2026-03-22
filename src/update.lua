@@ -4,6 +4,8 @@ end
 
 
 function updateGame(dt)
+    if gameState == 2 then return end -- stop everything on game over
+    
     world:update(dt)
     playerUpdate(dt)
     enemies:update(dt)

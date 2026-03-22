@@ -33,11 +33,25 @@ function player:takeDamage(amount)
     self.hitFlashTimer = 0.1 -- short white flash on hit
     if self.health <= 0 then
         gameState = 2 -- Set a new game state for "game over"
+
+        -- Freeze all projectiles immediately
+        for _, p in ipairs(projectiles) do
+            if p.physics then
+                p.physics:setLinearVelocity(0, 0)
+            end
+        end
+
+        -- Freeze all enemies immediately
+        for _, e in ipairs(enemies) do
+            if e.physics then
+                e.physics:setLinearVelocity(0, 0)
+            end
+        end
     end
 end
 
 function playerUpdate(dt)
-    if gameState == 2 then return end -- guard checks
+    -- if gameState == 2 then return end -- guard checks
     if player.invincibleTimer > 0 then
         player.invincibleTimer = player.invincibleTimer - dt
     end

@@ -70,6 +70,7 @@ function spawnEnemy(x, y, type, args)
     end
 
     enemy = init(enemy, x, y, args)
+    enemy.physics:setCollisionClass('enemy')
 
     function enemy:setScaleX()
         local px, py = player.collider:getPosition()
