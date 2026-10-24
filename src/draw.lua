@@ -70,6 +70,38 @@ function drawHUD()
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.print("HP  " .. player.health .. "/" .. player.maxHealth, x, y + barHeight + 4)
 
+    -- FLASH STEP bar (dodge charges) — tiny, sits under the HP label.
+    -- Drains a slice per dodge, refills gradually after a no-dash delay.
+    -- All logic lives in player.flashStep* fields (src/player.lua).
+    local fsWidth  = 100
+    local fsHeight = 6
+    local fsX = x
+    local fsY = y + 34  -- clear of the HP bar and its label
+    -- Clamp so nothing can ever produce a negative rectangle width
+    local fsPercent = math.max(0, math.min(1, player.flashStep or 1))
+
+    -- Background — same style as the HP bar, just smaller
+    love.graphics.setColor(0.2, 0.2, 0.2, 0.9)
+    love.graphics.rectangle("fill", fsX, fsY, fsWidth, fsHeight, 3, 3)
+
+    -- Fill: icy blue to match the dash ghost. When a dash is refused for low
+    -- charge (flashStepDeniedTimer, set in startDodge), the fill color blinks
+    -- red briefly — the bar still shows the true remaining charge.
+    local fsColor = {0.55, 0.8, 1, 1}
+    if (player.flashStepDeniedTimer or 0) > 0
+       and math.sin(player.flashStepDeniedTimer * 40) > 0 then
+        fsColor = {1, 0.25, 0.25, 1}
+    end
+    love.graphics.setColor(fsColor)
+    love.graphics.rectangle("fill", fsX, fsY, fsWidth * fsPercent, fsHeight, 3, 3)
+
+    -- Border + label beside the tiny bar
+    love.graphics.setColor(1, 1, 1, 0.6)
+    love.graphics.rectangle("line", fsX, fsY, fsWidth, fsHeight, 3, 3)
+
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.print("Flash step", fsX + fsWidth + 8, fsY - 4)
+
     love.graphics.setColor(1, 1, 1, 1)
 end
 

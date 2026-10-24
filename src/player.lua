@@ -79,6 +79,17 @@ player.dodgeCooldownMax  = 0.6   -- includes the dash itself, so ~0.4s dead time
 player.dodgeInvincibleTimer = 0
 player.dodgeInvincibleTime  = 0.3 -- i-frame window, slightly longer than the burst
 
+-- FLASH STEP meter (dodge resource, drawn as a tiny bar in drawHUD)
+-- Each dash spends one slice; after flashStepRegenDelay seconds WITHOUT a dash
+-- the meter trickles back to full. Tapping C with too little charge is denied
+-- (HUD blinks red) rather than silently doing nothing.
+player.flashStep = 1                 -- current charge, 0..1
+player.flashStepCost = 0.3           -- per dash: 3 dashes from a full bar
+player.flashStepRegenDelay = 0.8     -- seconds without a dash before regen starts
+player.flashStepRegenDelayTimer = 0  -- countdown of the above
+player.flashStepRegenRate = 1 / 1.2  -- full refill in ~1.2s of regen
+player.flashStepDeniedTimer = 0      -- brief red blink on HUD when a dash is refused
+
 function player:takeDamage(amount)
     if self.invincibleTimer > 0 then return end
     -- Dodge i-frames: identical "you can't be touched right now" rule as the
@@ -158,6 +169,14 @@ function player:startDodge()
     if self.dodgeCooldown > 0 or self.dodging then return end
     if self.attacking then return end  -- committed to the melee swing, no escape hatch
 
+    -- Charge gate: not enough Flash step? Flag the HUD to blink red and bail.
+    -- The check runs BEFORE any dash state is touched, so a refused tap
+    -- changes nothing.
+    if self.flashStep < self.flashStepCost then
+        self.flashStepDeniedTimer = 0.25
+        return
+    end
+
     -- Dash direction: a held movement key wins; otherwise dash toward facing.
     local dirOffsets = {
         up    = { 0, -1},
@@ -186,6 +205,12 @@ function player:startDodge()
     self.dodgeDirX = d[1]
     self.dodgeDirY = d[2]
     self.dodgeCooldown = self.dodgeCooldownMax
+
+    -- Spend the meter slice and restart the regen delay. The delay only resets
+    -- on a SUCCESSFUL dash: mashing C while it's on cooldown or empty never
+    -- punishes regen, it just fails the gates above.
+    self.flashStep = self.flashStep - self.flashStepCost
+    self.flashStepRegenDelayTimer = self.flashStepRegenDelay
 
     -- Grant the i-frame window (its own timer — see the state block comment)
     -- and face/anim toward the dash so the walk anim reads as a running burst.
@@ -282,6 +307,19 @@ function playerUpdate(dt)
 
     if player.dodgeInvincibleTimer > 0 then
         player.dodgeInvincibleTimer = player.dodgeInvincibleTimer - dt
+    end
+
+    -- FLASH STEP regen. Two phases, prioritized by the delay timer:
+    --   1. delay timer running — nothing regenerates ("not pressed for a while")
+    --   2. delay done — charge trickles back toward full until it sits at 1
+    if player.flashStepDeniedTimer > 0 then
+        player.flashStepDeniedTimer = player.flashStepDeniedTimer - dt
+    end
+
+    if player.flashStepRegenDelayTimer > 0 then
+        player.flashStepRegenDelayTimer = player.flashStepRegenDelayTimer - dt
+    elseif player.flashStep < 1 then
+        player.flashStep = math.min(1, player.flashStep + player.flashStepRegenRate * dt)
     end
 
     if player.dodgeTimer > 0 then
