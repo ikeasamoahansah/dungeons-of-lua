@@ -78,10 +78,12 @@ function drawLighting()
     -- 3) Attack telegraphs. state 99 = alert ("?!"), 100+ = attacking/firing.
     --    The glow fades in as they close in — threats announce themselves
     --    through the dark so the dodge tools get used, not forgotten.
+    --    lightRadius is an optional per-enemy override: the boss flares
+    --    hot while telegraphing a cast, and runs a hotter phase-2 aura.
     for _, e in ipairs(enemies) do
         if not e.dead and e.physics and e.state and e.state >= 99 and #allLights < MAX_LIGHTS then
             local ex, ey = e.physics:getPosition()
-            table.insert(allLights, {ex, ey, ENEMY_LIGHT_RADIUS})
+            table.insert(allLights, {ex, ey, e.lightRadius or ENEMY_LIGHT_RADIUS})
         end
     end
 
