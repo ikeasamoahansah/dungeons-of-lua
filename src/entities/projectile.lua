@@ -1,11 +1,45 @@
 projectiles = {}
 
-function spawnProjectile(x, y, tx, ty, speed, damage, owner)
+-- HOMING SHOT SETTINGS ------------------------------------------------------------------------
+-- Enemy projectiles spawned with homing = true lock onto the player and steer toward
+-- them for the first HOMING_TIME seconds of their lifetime, then keep flying in a
+-- straight line for the rest of it.
+-- Tuning notes:
+--   HOMING_TIME — how long the active chase lasts. Longer = scarier. Roughly half the
+--                 projectile's lifetime feels fair.
+--   HOMING_TURN — steering strength. Each frame the shot's heading is nudged
+--                 HOMING_TURN * dt of the way toward the player, so LOW values curve
+--                 gently (dodgeable by strafing) and HIGH values snap on target
+--                 (effectively undodgeable). 4 is a reasonable middle ground given the
+--                 player's 150 move speed.
+-- Lock-break rule: the moment the player becomes untouchable — took a hit OR is
+-- mid-dodge — any live homing lock is cancelled PERMANENTLY — not "paused until
+-- the i-frames end". Pausing would make the shot re-acquire the instant the
+-- grace runs out, which feels like cheating. With a permanent break, getting
+-- hit and dodging are both legitimate escapes (one costs HP, one is free).
+local HOMING_TIME = 1.5 -- seconds of active tracking after the shot spawns
+local HOMING_TURN = 4   -- steering strength (fraction of the gap closed per second)
+
+function spawnProjectile(x, y, tx, ty, speed, damage, owner, homing)
     local p = {}
     p.damage = damage or 1
     p.owner = owner or "enemy"
     p.dead = false
     p.lifetime = 3  -- seconds before auto-despawn
+
+    -- Remember the launch speed so the homing update can re-apply velocity later;
+    -- setLinearVelocity() at spawn is a one-time write, not a stored value.
+    p.speed = speed
+
+    -- Homing configuration.
+    -- homing is opt-in per call site (8th argument) so callers choose whether a
+    -- shot tracks: the mage pays for it with its 2s cooldown, while the boss's
+    -- 3-shot cone at 500px/s stays dodgeable straight-fire.
+    p.homing = homing or false
+    if p.homing then
+        p.homingTime = HOMING_TIME  -- countdown of the chase window
+        p.turnRate   = HOMING_TURN  -- how hard the shot steers
+    end
 
     -- Direction towards target
     local dx = tx - x
@@ -51,6 +85,67 @@ function updateProjectiles(dt)
                 p.dead = true
             end
 
+            -------------------------------------------------------------------------------------
+            -- HOMING / LOCK-ON
+            -------------------------------------------------------------------------------------
+            -- Rule 1: Lock break. The instant the player becomes untouchable —
+            -- took a hit (invincibleTimer) OR is mid-dodge dash
+            -- (dodgeInvincibleTimer) — this shot's homing is cancelled
+            -- PERMANENTLY, not "paused until it ends". Pausing would make the
+            -- shot re-acquire the instant the ghosting runs out, which feels
+            -- like cheating. With a permanent break, both eating a hit and
+            -- dodging through it count as escapes; the dodge is just the free way.
+            if p.homing and (player.invincibleTimer > 0 or player.dodgeInvincibleTimer > 0) then
+                p.homing = false
+            end
+
+            -- Rule 2: Steering. While the lock is live and the chase window hasn't
+            -- run out, nudge the shot's heading toward the player.
+            if p.homing and p.homingTime > 0 then
+                p.homingTime = p.homingTime - dt
+
+                local mx, my = p.physics:getPosition()
+                local px, py = player.collider:getPosition()
+
+                -- Unit vector from the projectile to the player right now
+                local tox = px - mx
+                local toy = py - my
+                local toLen = math.sqrt(tox*tox + toy*toy)
+
+                if toLen > 0 then
+                    -- Proportional steering instead of angle math (no atan2 wraparound
+                    -- headaches): blend the current heading with the direction to the
+                    -- player, closing p.turnRate*dt of the gap this frame.
+                    --
+                    -- Per-frame blend ≈ 4 / 60 ≈ 0.066, so the orb visibly CURVES
+                    -- after you instead of snapping — that curvature is exactly what
+                    -- makes it dodgeable by lateral movement.
+                    local blend = p.turnRate * dt
+                    if blend > 1 then
+                        blend = 1  -- clamp for huge dt (lag spikes): full snap, never overshoot
+                    end
+
+                    local hx = p.dx * (1 - blend) + (tox / toLen) * blend
+                    local hy = p.dy * (1 - blend) + (toy / toLen) * blend
+                    local hLen = math.sqrt(hx*hx + hy*hy)
+
+                    -- Guard against a zero-length blend (current heading exactly
+                    -- opposite the player on the same frame blend hits 1).
+                    if hLen > 0.0001 then
+                        p.dx = hx / hLen
+                        p.dy = hy / hLen
+                    end
+
+                    -- Re-apply velocity along the (possibly steered) heading.
+                    -- The projectile ignores gravity and can't rotate visually
+                    -- (circle collider), so writing velocity directly each frame
+                    -- is the cheapest correct way to steer it.
+                    p.physics:setLinearVelocity(p.dx * p.speed, p.dy * p.speed)
+                end
+                -- If the player is gone/zero-dist, just keep last velocity —
+                -- lifetime and wall collisions below still apply.
+            end
+
             -- Check hit on player
             if p.physics:enter("player") then
                 player:takeDamage(p.damage)
@@ -88,6 +183,17 @@ function drawProjectiles()
             -- Inner orb
             love.graphics.setColor(1, 0.6, 0.1, 1)
             love.graphics.circle("fill", px, py, 3)
+
+            -- Lock-on tell: a pulsing red ring drawn ONLY while this shot is
+            -- actively homing. Once the window expires or the lock breaks on
+            -- i-frames, the ring vanishes and the player knows the shot has
+            -- gone dumb — readable feedback either way.
+            if p.homing and p.homingTime and p.homingTime > 0 then
+                -- Oscillate 0..1 using the countdown lifetime as the phase
+                local pulse = 0.5 + 0.5 * math.sin(p.lifetime * 12)
+                love.graphics.setColor(1, 0.15, 0.15, 0.35 + 0.25 * pulse)
+                love.graphics.circle("line", px, py, 9 + 1.5 * pulse)
+            end
 
             love.graphics.setColor(1, 1, 1, 1)
         end

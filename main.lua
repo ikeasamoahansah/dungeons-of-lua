@@ -45,6 +45,11 @@ function love.keypressed(key)
         player:startThrow()
     end
 
+    -- Dodge dash on C (sprint is handled by holding Shift in playerUpdate)
+    if key == "c" and gameState ~= 2 then
+        player:startDodge()
+    end
+
     if key == "r" and gameState == 2 then
         love.event.quit("restart")
     end

@@ -58,7 +58,12 @@ local function mageInit(enemy, x, y, args)
                 local px, py = player.collider:getPosition()
                 local ex, ey = self.physics:getPosition()
                 
-                spawnProjectile(ex, ey, px, py, 240, 1, "enemy")
+                -- Homing shot: the 8th argument opts this bolt into the
+                -- lock-on behaviour in src/entities/projectile.lua — it chases
+                -- the player for HOMING_TIME seconds, then flies straight.
+                -- Pass false here if you'd rather the mage telegraph straight
+                -- shots only.
+                spawnProjectile(ex, ey, px, py, 240, 1, "enemy", true)
             end
         end
     end

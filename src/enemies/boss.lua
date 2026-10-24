@@ -60,6 +60,10 @@ local function bossInit(enemy, x, y, args)
                     local angle = baseAngle + (i * spread)
                     local tx = ex + math.cos(angle) * 100
                     local ty = ey + math.sin(angle) * 100
+                    -- NOTE: deliberately NOT homing. Three shots at 500px/s in a
+                    -- cone only works as a dodge-me pattern if they fly straight;
+                    -- homing would collapse the cone into a 3x damage wall.
+                    -- If you want a homing boss phase, pass true as the final arg.
                     spawnProjectile(ex, ey, tx, ty, 500, 1, "enemy")
                 end
             end
