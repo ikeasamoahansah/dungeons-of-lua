@@ -196,6 +196,79 @@ function drawHUD()
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.print("Flash step", fsX + fsWidth + 8, fsY - 4)
 
+    drawMinimap()
+
+    love.graphics.setColor(1, 1, 1, 1)
+end
+
+-- MINIMAP SETTINGS ---
+local MINIMAP_MARGIN = 12  -- distance from the window's top-right corner
+
+-- Stamps the pre-rendered dungeon canvas (built in loadMap) with live markers:
+--   - enemies as red dots, brighter when alerted/attacking (state >= 99) —
+--     doubles as a live threat radar
+--   - the player as a warm dot (matching their torch) with a small facing
+--     tick, which is the literal "sense of direction" bit
+function drawMinimap()
+    if not minimapCanvas then return end
+
+    local w = love.graphics.getWidth()
+    local pad = 4  -- inner padding between panel edge and map canvas
+    local panelW = minimapCanvas:getWidth() + pad * 2
+    local panelH = minimapCanvas:getHeight() + pad * 2
+    local x = w - panelW - MINIMAP_MARGIN
+    local y = MINIMAP_MARGIN
+
+    -- Panel: translucent, matching the HP bar's dark style
+    love.graphics.setColor(0.04, 0.04, 0.07, 0.8)
+    love.graphics.rectangle("fill", x, y, panelW, panelH, 5, 5)
+    love.graphics.setColor(1, 1, 1, 0.25)
+    love.graphics.rectangle("line", x, y, panelW, panelH, 5, 5)
+
+    -- Static layout — one canvas draw
+    love.graphics.setColor(1, 1, 1, 1)
+    local mapX = x + pad
+    local mapY = y + pad
+    love.graphics.draw(minimapCanvas, mapX, mapY)
+
+    -- World px -> canvas px: world tile size (e.g. 64) vs canvas px per tile (4)
+    local scale = MINIMAP_TILE_PX / gameMap.tilewidth
+    local mapTo = function(wx, wy)
+        return mapX + wx * scale, mapY + wy * scale
+    end
+
+    -- Enemies: dim red while idle/wandering so the map shows a lived-in
+    -- dungeon, bright red when state >= 99 (alert/attack) — the threats
+    -- that matter read at a glance.
+    for _, e in ipairs(enemies) do
+        if e.physics and not e.dead then
+            local ex, ey = e.physics:getPosition()
+            local dx, dy = mapTo(ex, ey)
+            if e.state and e.state >= 99 then
+                love.graphics.setColor(1, 0.2, 0.2, 1)
+                love.graphics.circle("fill", dx, dy, 2.5)
+            else
+                love.graphics.setColor(0.7, 0.25, 0.25, 0.55)
+                love.graphics.circle("fill", dx, dy, 1.5)
+            end
+        end
+    end
+
+    -- Player: facing tick first so the dot covers the joint, then the dot
+    -- itself in the torch color.
+    local px, py = mapTo(player.x, player.y)
+    local facing = {
+        up    = { 0, -1},
+        down  = { 0,  1},
+        left  = {-1,  0},
+        right = { 1,  0},
+    }
+    local f = facing[player.lastDirection] or { 0, -1 }
+    love.graphics.setColor(1, 0.3, 0.3, 0.9)
+    love.graphics.line(px, py, px + f[1] * 6, py + f[2] * 6)
+    love.graphics.setColor(1, 0.95, 0.8, 1)
+    love.graphics.circle("fill", px, py, 2.5)
+
     love.graphics.setColor(1, 1, 1, 1)
 end
 
