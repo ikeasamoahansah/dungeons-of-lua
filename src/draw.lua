@@ -14,6 +14,100 @@ function drawCamera()
     drawEnemyHealthBars()
     drawProjectiles()
     drawPlayerProjectiles()
+
+    -- Lighting must come LAST so it multiplies everything above — any sprite
+    -- drawn after this pass would escape the darkness.
+    drawLighting()
+end
+
+-- LIGHTING SETTINGS ---------------------------------------------------------------------------
+-- How dark the world is and how far light reaches. Tuned for the 30..35px sprites
+-- and 600x480 window; bump these if you change art scale.
+local MAX_LIGHTS           = 16  -- shader array cap; safety-break below keeps Lua in sync
+local PLAYER_LIGHT_RADIUS  = 170 -- the player's torch pool
+local ENEMY_LIGHT_RADIUS   = 60  -- glow around alarmed/attacking enemies
+local ENEMY_BOLT_RADIUS    = 30  -- enemy projectiles; they stay visible through the dark
+local PLAYER_BOLT_RADIUS   = 24  -- your own throws
+
+-- The dungeon darkness pass. Multiplies the scene below with a light map:
+--   1. The player is ALWAYS lit (they're the torch).
+--   2. Projectiles glow small and bright — you can see attacks coming.
+--   3. Enemies in state >= 99 (alert + attacking) glow — telegraphed from the dark.
+-- Everything else sits in cold near-black set inside assets/shaders/lighting.glsl.
+function drawLighting()
+    local shader = shaders.lighting
+    if not shader then return end
+
+    -- Priority order matters only if we hit MAX_LIGHTS: player first (never
+    -- dropped), then danger, then threat telegraphs.
+    local allLights = {}
+
+    -- 1) Player torch — always slot[0]. player.x/y are synced to the collider
+    --    every frame by cameraUpdate
+    table.insert(allLights, {player.x, player.y, PLAYER_LIGHT_RADIUS})
+
+    -- 2) Projectiles — a fleeing throw or an incoming homing bolt both glow.
+    --    Their sprites had bright glows already, which are multiplied down to
+    --    near-invisible in the dark; these pools restore them.
+    for _, p in ipairs(projectiles) do
+        if not p.dead and p.physics and #allLights < MAX_LIGHTS then
+            local px, py = p.physics:getPosition()
+            table.insert(allLights, {px, py, ENEMY_BOLT_RADIUS})
+        end
+    end
+    for _, p in ipairs(playerProjectiles) do
+        if not p.dead and p.physics and #allLights < MAX_LIGHTS then
+            local px, py = p.physics:getPosition()
+            table.insert(allLights, {px, py, PLAYER_BOLT_RADIUS})
+        end
+    end
+
+    -- 3) Attack telegraphs. state 99 = alert ("?!"), 100+ = attacking/firing.
+    --    The glow fades in as they close in — threats announce themselves
+    --    through the dark so the dodge tools get used, not forgotten.
+    for _, e in ipairs(enemies) do
+        if not e.dead and e.physics and e.state and e.state >= 99 and #allLights < MAX_LIGHTS then
+            local ex, ey = e.physics:getPosition()
+            table.insert(allLights, {ex, ey, ENEMY_LIGHT_RADIUS})
+        end
+    end
+
+    -- 'multiply' requires the premultiplied submode in this LÖVE build; with
+    -- an alpha-1 quad the rgb result is the same (dst * src) either way.
+    love.graphics.setBlendMode('multiply', 'premultiplied')
+    love.graphics.setShader(shader)
+    love.graphics.setColor(1, 1, 1, 1)
+
+    -- Send uniforms. lightCount is a plain number; the light array is sent as
+    -- one {x, y, radius} table per live light. Slots past lightCount are never
+    -- touched by the shader's loop, so the rest of the array can hold garbage.
+    -- Send uniforms, refreshed every frame:
+    --   lightCount / lights — the live slots (player torch first, then danger,
+    --     then threat telegraphs); slots past lightCount are never read.
+    --   cam_pos / screen_size — the screen->world transform the shader uses,
+    --     because it computes world position per pixel (fragment-only shader).
+    shader:send('lightCount', #allLights)
+    local unpackPos = unpack or table.unpack  -- Lua 5.1/LuaJIT vs 5.2+
+    shader:send('lights', unpackPos(allLights))
+    shader:send('cam_pos', {cam.x, cam.y})
+    shader:send('screen_size', {love.graphics.getWidth(), love.graphics.getHeight()})
+
+    -- The overlay rect, in world coords: the shader reads each vertex's
+    -- object-space position AS its world position (see the shader header).
+    -- Slight overdraw on every side, so the pass never leaves an unshaded
+    -- sliver even at odd window aspect ratios after resizing.
+    local w = love.graphics.getWidth()
+    local h = love.graphics.getHeight()
+    local padding = 60
+    love.graphics.rectangle('fill',
+        cam.x - w / 2 - padding, cam.y - h / 2 - padding,
+        w + padding * 2, h + padding * 2)
+
+    love.graphics.setShader()
+    -- Restore the DEFAULT blend setup: plain alpha blend with standard
+    -- (pre-multiplied-into-alpha) source colors. In this LÖVE version the
+    -- default alphamode is named 'alphamultiply'.
+    love.graphics.setBlendMode('alpha', 'alphamultiply')
 end
 
 

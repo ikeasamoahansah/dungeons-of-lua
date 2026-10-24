@@ -11,8 +11,12 @@ sprites.enemies.bat = love.graphics.newImage('assets/sprites/enemies/bat.png')
 sprites.enemies.mage = love.graphics.newImage('assets/sprites/enemies/mage.png')
 sprites.enemies.boss = love.graphics.newImage('assets/sprites/enemies/boss.png')
 
--- shaders = {}
--- shaders.vignette = love.graphics.newShader('assets/shaders/vignette.glsl')
+-- shaders: the vignette darkens screen corners (screen space), the lighting
+-- shader is the dungeon darkness/light-pool pass drawn in world space by
+-- drawLighting() in src/draw.lua.
+shaders = {}
+shaders.vignette = love.graphics.newShader('assets/shaders/vignette.glsl')
+shaders.lighting = love.graphics.newShader('assets/shaders/lighting.glsl')
 
 -- fonts
 fonts = {}
