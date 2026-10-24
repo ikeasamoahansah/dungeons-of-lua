@@ -90,7 +90,46 @@ player.flashStepRegenDelayTimer = 0  -- countdown of the above
 player.flashStepRegenRate = 1 / 1.2  -- full refill in ~1.2s of regen
 player.flashStepDeniedTimer = 0      -- brief red blink on HUD when a dash is refused
 
+-- SHIELD state (toggled by E, see player:toggleShield)
+-- A glowing orb that absorbs incoming damage. While up it drains constantly;
+-- each blocked hit costs an extra chunk. Regen is deliberately SLOWER than
+-- Flash step (1.5s delay + 3.5s refill vs 0.8s + 1.2s) — the shield is the
+-- strong tool, so it gets the long cooldown.
+-- Deliberate consequence: a blocked hit grants NO i-frames, so homing bolts
+-- keep tracking you while you facetank them. The meter is the whole price.
+player.shieldActive  = false
+player.shieldMeter   = 1              -- current charge, 0..1
+player.shieldMinStart = 0.25          -- meter needed to raise the orb
+player.shieldDrainRate = 1 / 3        -- ~3s of continuous sustain when up
+player.shieldHitCost  = 0.25          -- instant cost per blocked hit (4 bolts = full bar)
+player.shieldRegenDelay = 1.5         -- seconds shield-free before regen starts
+player.shieldRegenDelayTimer = 0
+player.shieldRegenRate = 1 / 3.5      -- full refill in ~3.5s (Flash step: 1.2s)
+player.shieldDeniedTimer = 0          -- HUD blink when E pressed with too little charge
+-- Melee enemies call takeDamage EVERY frame they overlap the player. The 1s
+-- invincibleTimer naturally throttles that for HP damage — the shield needs
+-- its own throttle, or standing inside one enemy shreds the meter in a second.
+player.shieldAbsorbCooldown = 0
+player.shieldAbsorbCooldownMax = 0.3
+
 function player:takeDamage(amount)
+    -- SHIELD absorbs: damage is soaked by the orb instead of HP, costing a
+    -- meter chunk per blocked hit. The projectile dies on contact either way
+    -- (handled in the projectile loop), so shielded players can delete bolts
+    -- by walking into them.
+    -- The absorb cooldown throttles repeated calls (melee enemies overlap
+    -- every frame) — same job the invincibleTimer does below for raw HP.
+    if self.shieldActive then
+        if self.shieldAbsorbCooldown <= 0 then
+            self.shieldMeter = math.max(0, self.shieldMeter - self.shieldHitCost)
+            self.shieldAbsorbCooldown = self.shieldAbsorbCooldownMax
+            if self.shieldMeter <= 0 then
+                self:deactivateShield()  -- drained dry: orb pops, regen delay starts
+            end
+        end
+        return  -- blocked either way, cooldown or not
+    end
+
     if self.invincibleTimer > 0 then return end
     -- Dodge i-frames: identical "you can't be touched right now" rule as the
     -- took-a-hit timer above, with a separate timer/visual (see state block).
@@ -219,6 +258,33 @@ function player:startDodge()
     self.anim = self.animations[dashKey]
 end
 
+-- Shield: E toggles the glowing orb barrier. On: drains a small meter slice
+-- every frame plus a chunk per blocked hit. Off: regen delay starts on ANY
+-- shutdown — toggling off to hedge the meter is a real cost, not free parking.
+function player:toggleShield()
+    if self.shieldActive then
+        self:deactivateShield()
+        return
+    end
+
+    -- Too drained to raise the orb? HUD blinks (shieldDeniedTimer) — same
+    -- feedback pattern the Flash step meter uses.
+    if self.shieldMeter < self.shieldMinStart then
+        self.shieldDeniedTimer = 0.25
+        return
+    end
+
+    self.shieldActive = true
+end
+
+function player:deactivateShield()
+    if not self.shieldActive then return end
+    self.shieldActive = false
+    -- Regen delay restarts regardless of WHY it went down (drained dry,
+    -- manual toggle) — commitment is the price of sustain.
+    self.shieldRegenDelayTimer = self.shieldRegenDelay
+end
+
 function player:startThrow()
     if player.throwCooldown > 0 then return end
 
@@ -320,6 +386,33 @@ function playerUpdate(dt)
         player.flashStepRegenDelayTimer = player.flashStepRegenDelayTimer - dt
     elseif player.flashStep < 1 then
         player.flashStep = math.min(1, player.flashStep + player.flashStepRegenRate * dt)
+    end
+
+    -- SHIELD drain / regen. Two states, decided by the toggle:
+    --   UP: meter drains continuously; a separate absorb cooldown throttles
+    --       per-hit costs (ticked below). Hitting empty force-deactivates.
+    --   DOWN: after shieldRegenDelay seconds, the meter trickles back SLOWER
+    --       than Flash step (shieldRegenRate vs flashStepRegenRate).
+    if player.shieldDeniedTimer > 0 then
+        player.shieldDeniedTimer = player.shieldDeniedTimer - dt
+    end
+
+    if player.shieldAbsorbCooldown > 0 then
+        player.shieldAbsorbCooldown = player.shieldAbsorbCooldown - dt
+    end
+
+    if player.shieldActive then
+        player.shieldMeter = player.shieldMeter - player.shieldDrainRate * dt
+        if player.shieldMeter <= 0 then
+            player.shieldMeter = 0
+            player:deactivateShield()  -- orb pops when the meter runs dry
+        end
+    else
+        if player.shieldRegenDelayTimer > 0 then
+            player.shieldRegenDelayTimer = player.shieldRegenDelayTimer - dt
+        elseif player.shieldMeter < 1 then
+            player.shieldMeter = math.min(1, player.shieldMeter + player.shieldRegenRate * dt)
+        end
     end
 
     if player.dodgeTimer > 0 then

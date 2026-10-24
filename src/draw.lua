@@ -10,6 +10,11 @@ function drawCamera()
     end
 
     drawPlayer()
+    -- The shield orb renders hot-on-the-heels of the sprite, BEFORE lighting —
+    -- it's an in-world object, so it gets multiplied down at distance like
+    -- everything else (the orb itself emits a light slot below, so it's never
+    -- actually invisible).
+    drawShieldOrb()
     enemies:draw()
     drawEnemyHealthBars()
     drawProjectiles()
@@ -25,9 +30,10 @@ end
 -- and 600x480 window; bump these if you change art scale.
 local MAX_LIGHTS           = 16  -- shader array cap; safety-break below keeps Lua in sync
 local PLAYER_LIGHT_RADIUS  = 170 -- the player's torch pool
+local SHIELD_LIGHT_RADIUS  = 90  -- extra glow while the shield orb is up
 local ENEMY_LIGHT_RADIUS   = 60  -- glow around alarmed/attacking enemies
 local ENEMY_BOLT_RADIUS    = 30  -- enemy projectiles; they stay visible through the dark
-local PLAYER_BOLT_RADIUS   = 24  -- your own throws
+local PLAYER_BOLT_RADIUS   = 24  -- your fire spells
 
 -- The dungeon darkness pass. Multiplies the scene below with a light map:
 --   1. The player is ALWAYS lit (they're the torch).
@@ -45,6 +51,13 @@ function drawLighting()
     -- 1) Player torch — always slot[0]. player.x/y are synced to the collider
     --    every frame by cameraUpdate
     table.insert(allLights, {player.x, player.y, PLAYER_LIGHT_RADIUS})
+
+    -- 1b) Shield orb glow — while the barrier is up the player's light pool
+    --     blooms wider. Same position slot, just a bigger halo; additive in
+    --     the shader, so it visibly brightens the torch rather than double-drawing.
+    if player.shieldActive then
+        table.insert(allLights, {player.x, player.y, SHIELD_LIGHT_RADIUS})
+    end
 
     -- 2) Projectiles — a fleeing throw or an incoming homing bolt both glow.
     --    Their sprites had bright glows already, which are multiplied down to
@@ -134,6 +147,35 @@ function drawGameOver()
     love.graphics.setFont(love.graphics.getFont())
 end
 
+-- The glowing shield orb drawn around the player while the barrier is up.
+-- Teal palette so it reads distinct from: torch light (warm white), fire
+-- spells (orange), enemy bolts (orange-red) and alert glows.
+-- Drawn in world space (before the lighting pass) on purpose.
+function drawShieldOrb()
+    if not player.shieldActive then return end
+
+    local px, py = player.x, player.y
+    -- Gentle breathing pulse — alive, not a static ring
+    local pulse = 0.5 + 0.5 * math.sin(love.timer.getTime() * 6)
+    local radius = 36 + 2 * pulse
+
+    -- Soft interior fill, pulsing slightly brighter
+    love.graphics.setColor(0.3, 0.9, 0.7, 0.10 + 0.05 * pulse)
+    love.graphics.circle("fill", px, py, radius)
+
+    -- Bright rim, nearly opaque so the boundary reads clearly
+    love.graphics.setColor(0.55, 1, 0.85, 0.9)
+    love.graphics.setLineWidth(2)
+    love.graphics.circle("line", px, py, radius)
+
+    -- Secondary faint outer ring — energy field feel
+    love.graphics.setColor(0.55, 1, 0.85, 0.25)
+    love.graphics.circle("line", px, py, radius + 4 + 2 * pulse)
+
+    love.graphics.setLineWidth(1)
+    love.graphics.setColor(1, 1, 1, 1)
+end
+
 function drawHUD()
     local barWidth = 150
     local barHeight = 14
@@ -195,6 +237,38 @@ function drawHUD()
 
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.print("Flash step", fsX + fsWidth + 8, fsY - 4)
+
+    -- SHIELD bar — third tiny meter. Deliberately shows the regen design:
+    -- dimmed while the post-shutdown regen delay waits, teal while tickling
+    -- up, brighter still while the orb is actually raised (felt through the
+    -- constant drain). Red blink on E-pressed-with-too-little-charge.
+    local shWidth  = 100
+    local shHeight = 6
+    local shX = x
+    local shY = fsY + 12  -- tucks just under the Flash step bar
+    local shPercent = math.max(0, math.min(1, player.shieldMeter or 1))
+
+    love.graphics.setColor(0.2, 0.2, 0.2, 0.9)
+    love.graphics.rectangle("fill", shX, shY, shWidth, shHeight, 3, 3)
+
+    -- Fill color state machine: denied-blink red > active bright > waiting
+    -- (delay) dim > regenerating normal
+    local shColor = {0.3, 0.9, 0.7, 1}
+    if (player.shieldDeniedTimer or 0) > 0 and math.sin(player.shieldDeniedTimer * 40) > 0 then
+        shColor = {1, 0.25, 0.25, 1}
+    elseif player.shieldActive then
+        shColor = {0.55, 1, 0.85, 1}
+    elseif (player.shieldRegenDelayTimer or 0) > 0 then
+        shColor = {0.3, 0.9, 0.7, 0.35}
+    end
+    love.graphics.setColor(shColor)
+    love.graphics.rectangle("fill", shX, shY, shWidth * shPercent, shHeight, 3, 3)
+
+    love.graphics.setColor(1, 1, 1, 0.6)
+    love.graphics.rectangle("line", shX, shY, shWidth, shHeight, 3, 3)
+
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.print("Shield", shX + shWidth + 8, shY - 4)
 
     drawMinimap()
 

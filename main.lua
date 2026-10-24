@@ -50,6 +50,11 @@ function love.keypressed(key)
         player:startDodge()
     end
 
+    -- Toggle the glowing shield orb on E (drain/regen ticked in playerUpdate)
+    if key == "e" and gameState ~= 2 then
+        player:toggleShield()
+    end
+
     if key == "r" and gameState == 2 then
         love.event.quit("restart")
     end

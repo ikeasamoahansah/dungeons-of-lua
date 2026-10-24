@@ -200,14 +200,30 @@ function drawProjectiles()
     end
 end
 
--- Player projectiles stored separately
+-- Player projectiles: FIRE SPELLS (cast with X). Each cast homes onto the
+-- nearest LIVE enemy for its flight window; if every enemy is gone mid-flight
+-- the bolt just flies straight out. Treated as its own homing family with
+-- tighter steering than enemy shots — the caster picked the target ground.
 playerProjectiles = {}
+
+-- FIRE SPELL SETTINGS ------------------------------------------------------------------------
+local FIRE_HOMING_TIME = 2.0 -- seconds of tracking (of the 2.5s lifetime)
+local FIRE_TURN        = 5   -- tighter than enemy homing (HOMING_TURN = 4): the bolt is
+                             -- meant as a lock-on answer to dodgeable mage shots
 
 function spawnPlayerProjectile(x, y, tx, ty, speed, damage)
     local p = {}
     p.damage  = damage or 1
     p.dead    = false
     p.lifetime = 2.5
+
+    -- Fire bolt homing config: no fixed target at spawn — the nearest live
+    -- enemy is re-picked EVERY frame during the homing window, so the bolt
+    -- never chases a corpse and always prefers the closest threat.
+    p.speed = speed
+    p.homing = true
+    p.homingTime = FIRE_HOMING_TIME
+    p.turnRate = FIRE_TURN
 
     local dx = tx - x
     local dy = ty - y
@@ -245,6 +261,58 @@ function updatePlayerProjectiles(dt)
             p.lifetime = p.lifetime - dt
             if p.lifetime <= 0 then
                 p.dead = true
+            end
+
+            ------------------------------------------------------------------
+            -- FIRE BOLT HOMING: steer toward the nearest LIVE enemy.
+            -- Symmetric with the enemy homing in updateProjectiles: proportional
+            -- steering capped per frame; the lock window is shorter than the
+            -- bolt's life so the tail end is a straight shot.
+            ------------------------------------------------------------------
+            if p.homing and p.homingTime > 0 then
+                p.homingTime = p.homingTime - dt
+
+                -- Target re-selection every frame: nearest living enemy wins;
+                -- corpses and despawned physics are skipped. No enemy left =
+                -- no steering this frame (bolt coasts straight).
+                local mx, my = p.physics:getPosition()
+                local nearest, nearestDistSq = nil, math.huge
+
+                for _, e in ipairs(enemies) do
+                    if not e.dead and e.physics then
+                        local ex, ey = e.physics:getPosition()
+                        local dsq = (ex - mx) * (ex - mx) + (ey - my) * (ey - my)
+                        if dsq < nearestDistSq then
+                            nearestDistSq = dsq
+                            nearest = {x = ex, y = ey}
+                        end
+                    end
+                end
+
+                if nearest then
+                    local tox = nearest.x - mx
+                    local toy = nearest.y - my
+                    local toLen = math.sqrt(tox*tox + toy*toy)
+
+                    if toLen > 0 then
+                        -- Same blend steering as enemy bolts (see updateProjectiles):
+                        -- closes turnRate*dt of the gap toward the target per frame,
+                        -- clamped to 1 for huge dt so it can't overshoot.
+                        local blend = p.turnRate * dt
+                        if blend > 1 then blend = 1 end
+
+                        local hx = p.dx * (1 - blend) + (tox / toLen) * blend
+                        local hy = p.dy * (1 - blend) + (toy / toLen) * blend
+                        local hLen = math.sqrt(hx*hx + hy*hy)
+
+                        if hLen > 0.0001 then
+                            p.dx = hx / hLen
+                            p.dy = hy / hLen
+                        end
+
+                        p.physics:setLinearVelocity(p.dx * p.speed, p.dy * p.speed)
+                    end
+                end
             end
 
             -- Store trail positions for draw
@@ -291,24 +359,24 @@ function drawPlayerProjectiles()
         if not p.dead and p.physics then
             local px, py = p.physics:getPosition()
 
-            -- Draw trail
+            -- Draw trail — ember fade
             for j, pt in ipairs(p.trail) do
-                local alpha = (pt.life / 0.1) * 0.4 * (1 - j / #p.trail)
-                local size  = 7 * (1 - j / #p.trail)
-                love.graphics.setColor(0.3, 0.6, 1, alpha)
+                local alpha = (pt.life / 0.1) * 0.5 * (1 - j / #p.trail)
+                local size  = 6 * (1 - j / #p.trail)
+                love.graphics.setColor(1, 0.45, 0.15, alpha)
                 love.graphics.circle("fill", pt.x, pt.y, size)
             end
 
-            -- Outer glow
-            love.graphics.setColor(0.2, 0.5, 1, 0.25)
+            -- Outer glow — firey haze
+            love.graphics.setColor(1, 0.35, 0.1, 0.25)
             love.graphics.circle("fill", px, py, 18)
 
-            -- Mid ring
-            love.graphics.setColor(0.4, 0.7, 1, 0.6)
+            -- Mid ring — hot bubble
+            love.graphics.setColor(1, 0.55, 0.2, 0.7)
             love.graphics.circle("fill", px, py, 12)
 
-            -- Bright core
-            love.graphics.setColor(0.8, 0.95, 1, 1)
+            -- Bright core — near-white flame center
+            love.graphics.setColor(1, 0.9, 0.6, 1)
             love.graphics.circle("fill", px, py, 6)
 
             love.graphics.setColor(1, 1, 1, 1)
