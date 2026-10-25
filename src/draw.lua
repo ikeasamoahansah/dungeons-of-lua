@@ -167,7 +167,7 @@ function drawShieldOrb()
 
     -- Bright rim, nearly opaque so the boundary reads clearly
     love.graphics.setColor(0.55, 1, 0.85, 0.9)
-    love.graphics.setLineWidth(2)
+    love.graphics.setLineWidth(2100)
     love.graphics.circle("line", px, py, radius)
 
     -- Secondary faint outer ring — energy field feel
