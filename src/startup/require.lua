@@ -3,6 +3,7 @@ function requireAll()
     require('src/sounds/sound')
     
     require('src/utils/cam')
+    require('src/utils/keybinds')
     require('src/utils/utils')
 
     require('src/levels/loadMap')
@@ -13,4 +14,6 @@ function requireAll()
     require('src/entities/projectile')
     require('src/update')
     require('src/draw')
+
+    require('src/menu')
 end

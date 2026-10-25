@@ -217,6 +217,8 @@ function player:startDodge()
     end
 
     -- Dash direction: a held movement key wins; otherwise dash toward facing.
+    -- (Movement keys are rebindable — same keybinds actions as walking, so
+    -- dashing follows whatever the player remapped.)
     local dirOffsets = {
         up    = { 0, -1},
         down  = { 0,  1},
@@ -225,13 +227,13 @@ function player:startDodge()
     }
 
     local dashKey
-    if love.keyboard.isDown("right") or love.keyboard.isDown("d") then
+    if keybinds:isDown("moveRight") then
         dashKey = "right"
-    elseif love.keyboard.isDown("left") or love.keyboard.isDown("a") then
+    elseif keybinds:isDown("moveLeft") then
         dashKey = "left"
-    elseif love.keyboard.isDown("down") or love.keyboard.isDown("s") then
+    elseif keybinds:isDown("moveDown") then
         dashKey = "down"
-    elseif love.keyboard.isDown("up") or love.keyboard.isDown("w") then
+    elseif keybinds:isDown("moveUp") then
         dashKey = "up"
     else
         dashKey = self.lastDirection  -- standing still: dash the way you face
@@ -425,13 +427,13 @@ function playerUpdate(dt)
         end
     end
 
-    -- HOLD X to fire continuously.
+    -- HOLD FIRE (the Fire Spell action) to fire continuously.
     -- The tap handler in love.keypressed (main.lua) still covers single presses;
     -- this makes shooting work while moving like the movement keys do: hold to
     -- keep performing the action. startThrow is cooldown-guarded, so the frame
     -- the key goes down (keypressed fires, then update sees isDown true) the
     -- cooldown it just set blocks this duplicate call — no double shots.
-    if love.keyboard.isDown("x") then
+    if keybinds:isDown("fire") then
         player:startThrow()
     end
 
@@ -453,27 +455,28 @@ function playerUpdate(dt)
         vy = player.dodgeDirY * player.dodgeSpeed
         moved = true
     elseif not player.attacking then
-        -- SPRINT: Shift (either one) ups the walk speed for every branch below.
+        -- SPRINT: whatever the Sprint action is bound to (default L-Shift —
+        -- either physical shift key stays supported via the binding list).
         -- Sprinting is allowed while throwing (run-and-gun) and costs nothing —
         -- it's held, not stamina-based, so it stays a smooth evasion tool.
         local speed = player.speed
-        if love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift") then
+        if keybinds:isDown("sprint") then
             speed = player.sprintSpeed
         end
 
-        if love.keyboard.isDown("right") or love.keyboard.isDown("d") then
+        if keybinds:isDown("moveRight") then
             vx = speed
             player.lastDirection = "right"
             moved = true
-        elseif love.keyboard.isDown("left") or love.keyboard.isDown("a") then
+        elseif keybinds:isDown("moveLeft") then
             vx = -speed
             player.lastDirection = "left"
             moved = true
-        elseif love.keyboard.isDown("down") or love.keyboard.isDown("s") then
+        elseif keybinds:isDown("moveDown") then
             vy = speed
             player.lastDirection = "down"
             moved = true
-        elseif love.keyboard.isDown("up") or love.keyboard.isDown("w") then
+        elseif keybinds:isDown("moveUp") then
             vy = -speed
             player.lastDirection = "up"
             moved = true

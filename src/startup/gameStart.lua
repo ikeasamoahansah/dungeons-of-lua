@@ -25,7 +25,11 @@ function gameStart()
 
     require('src/startup/require')
     requireAll()
-    
+
+    -- keybindings: load from (or create) the settings file, and put the menu
+    -- into its pristine boot state, before the very first frame runs.
+    keybinds:init()
+    menu:enter()
 end
 
 function initGlobals()
