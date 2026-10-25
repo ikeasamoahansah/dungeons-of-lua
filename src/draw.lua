@@ -1,6 +1,6 @@
 function drawCamera()
     --if gameState == 0 then return end
-    
+
     if gameMap.layers["floor"] then
         gameMap:drawLayer(gameMap.layers["floor"])
     end
@@ -133,7 +133,7 @@ function drawGameOver()
     --Dark overlay
     love.graphics.setColor(0, 0, 0, 0.7)
     love.graphics.rectangle("fill", 0, 0, w, h)
-    
+
     --GAME OVER text
     love.graphics.setColor(1, 0.1, 0.1, 1)
     love.graphics.setFont(fonts.large)
@@ -179,6 +179,10 @@ function drawShieldOrb()
 end
 
 function drawHUD()
+    -- Small font for every label below: without this the HUD inherits
+    -- whatever font the previous draw call left set (24px from the menu), so
+    -- "Flash step" / "HP" / "Shield" dwarfed the bars next to them.
+    love.graphics.setFont(fonts.small)
     local barWidth = 150
     local barHeight = 14
     local x = 20
@@ -206,7 +210,7 @@ function drawHUD()
 
     -- Label
     love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print("HP  " .. player.health .. "/" .. player.maxHealth, x, y + barHeight + 4)
+    love.graphics.print("HP  " .. player.health .. "/" .. player.maxHealth, x, y + barHeight + 2)
 
     -- FLASH STEP bar (dodge charges) — tiny, sits under the HP label.
     -- Drains a slice per dodge, refills gradually after a no-dash delay.
@@ -214,7 +218,9 @@ function drawHUD()
     local fsWidth  = 100
     local fsHeight = 6
     local fsX = x
-    local fsY = y + 34  -- clear of the HP bar and its label
+    -- 32 = 20 (HP bar top) + 14 (its height) + 2 (gap) + fine-tuned padding:
+    -- clears the 12px HP label without leaving a large empty band.
+    local fsY = y + 32
     -- Clamp so nothing can ever produce a negative rectangle width
     local fsPercent = math.max(0, math.min(1, player.flashStep or 1))
 

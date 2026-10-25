@@ -22,3 +22,9 @@ shaders.lighting = love.graphics.newShader('assets/shaders/lighting.glsl')
 fonts = {}
 fonts.large = love.graphics.newFont(48)
 fonts.medium = love.graphics.newFont(24)
+
+-- HUD-sized font: the HP / Flash step / Shield bar labels. Deliberately tiny
+-- (12px) so all three meters + labels fit the corner without crowding.
+-- drawHUD() has no "inherited" font to fall back on — whatever was set last in
+-- the frame leaks in, so it must set this itself.
+fonts.small = love.graphics.newFont(12)
