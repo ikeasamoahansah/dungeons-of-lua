@@ -30,7 +30,7 @@ end
 -- and 600x480 window; bump these if you change art scale.
 local MAX_LIGHTS           = 16  -- shader array cap; safety-break below keeps Lua in sync
 local PLAYER_LIGHT_RADIUS  = 170 -- the player's torch pool
-local SHIELD_LIGHT_RADIUS  = 90  -- extra glow while the shield orb is up
+local SHIELD_LIGHT_RADIUS  = 55  -- subtle extra glow while the shield orb is up
 local ENEMY_LIGHT_RADIUS   = 60  -- glow around alarmed/attacking enemies
 local ENEMY_BOLT_RADIUS    = 30  -- enemy projectiles; they stay visible through the dark
 local PLAYER_BOLT_RADIUS   = 24  -- your fire spells
@@ -159,19 +159,25 @@ function drawShieldOrb()
     local px, py = player.x, player.y
     -- Gentle breathing pulse — alive, not a static ring
     local pulse = 0.5 + 0.5 * math.sin(love.timer.getTime() * 6)
-    local radius = 36 + 2 * pulse
+    local radius = player.shieldRadius + 2 * pulse
 
-    -- Soft interior fill, pulsing slightly brighter
-    love.graphics.setColor(0.3, 0.9, 0.7, 0.10 + 0.05 * pulse)
+    -- Faint interior: barely-there translucent tint, NOT a bright disc.
+    love.graphics.setColor(0.3, 0.9, 0.7, 0.05 + 0.03 * pulse)
     love.graphics.circle("fill", px, py, radius)
 
-    -- Bright rim, nearly opaque so the boundary reads clearly
-    love.graphics.setColor(0.55, 1, 0.85, 0.9)
-    love.graphics.setLineWidth(2100)
+    -- Glowing circumference: a soft wide halo behind a thin bright rim, so the
+    -- boundary reads clearly while the interior stays see-through.
+    love.graphics.setLineWidth(5 + 2 * pulse)
+    love.graphics.setColor(0.55, 1, 0.85, 0.12 + 0.06 * pulse)
+    love.graphics.circle("line", px, py, radius)
+
+    love.graphics.setLineWidth(2)
+    love.graphics.setColor(0.55, 1, 0.85, 0.45 + 0.15 * pulse)
     love.graphics.circle("line", px, py, radius)
 
     -- Secondary faint outer ring — energy field feel
-    love.graphics.setColor(0.55, 1, 0.85, 0.25)
+    love.graphics.setColor(0.55, 1, 0.85, 0.18)
+    love.graphics.setLineWidth(1)
     love.graphics.circle("line", px, py, radius + 4 + 2 * pulse)
 
     love.graphics.setLineWidth(1)

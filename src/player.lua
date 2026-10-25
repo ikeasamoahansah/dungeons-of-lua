@@ -98,6 +98,7 @@ player.flashStepDeniedTimer = 0      -- brief red blink on HUD when a dash is re
 -- Deliberate consequence: a blocked hit grants NO i-frames, so homing bolts
 -- keep tracking you while you facetank them. The meter is the whole price.
 player.shieldActive  = false
+player.shieldRadius  = 36             -- orb size (px) — draw + projectile intercept share it
 player.shieldMeter   = 1              -- current charge, 0..1
 player.shieldMinStart = 0.25          -- meter needed to raise the orb
 player.shieldDrainRate = 1 / 3        -- ~3s of continuous sustain when up

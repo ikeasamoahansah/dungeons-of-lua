@@ -146,8 +146,45 @@ function updateProjectiles(dt)
                 -- lifetime and wall collisions below still apply.
             end
 
+            -- SHIELD INTERCEPT: while the orb is up, enemy bolts die at the
+            -- shield's circumference instead of flying into the player's body.
+            -- Check first, so the shot pops on the glowing rim — the meter is
+            -- still charged through takeDamage, so the absorb cooldown, meter
+            -- cost and pop-on-drain behave exactly like a direct contact hit.
+            -- (+2 px buffer: the orb breathes ±2, and a fast bolt can cover a
+            -- few px per frame; killing it just outside the rim reads best.)
+            -- On contact the bolt does a small outward ricochet off the rim
+            -- before it dissolves (~0.15s of flight, no further damage).
+            if player.shieldActive and not p.deflected then
+                local mx, my = p.physics:getPosition()
+                local sx, sy = player.x, player.y
+                local intercept = player.shieldRadius + 2
+                local interceptSq = intercept * intercept
+                local distSq = (mx - sx) * (mx - sx) + (my - sy) * (my - sy)
+                if distSq <= interceptSq then
+                    player:takeDamage(p.damage)
+
+                    -- Ricochet: reflect the incoming velocity off the rim
+                    -- normal, damped to a soft glance (0.45), then push the
+                    -- collider just outside so the overlap resolves outward.
+                    local nx, ny = (mx - sx) / intercept, (my - sy) / intercept
+                    local vx, vy = p.physics:getLinearVelocity()
+                    local dot = vx * nx + vy * ny
+                    if dot < 0 then
+                        vx, vy = vx - 2 * dot * nx, vy - 2 * dot * ny
+                    end
+                    p.physics:setLinearVelocity(vx * 0.45 + nx * 60, vy * 0.45 + ny * 60)
+                    local pushOut = intercept + 4
+                    p.physics:setPosition(sx + nx * pushOut, sy + ny * pushOut)
+
+                    p.deflected = true
+                    p.homing = false      -- a deflected bolt can't re-locked onto you
+                    p.lifetime = 0.15     -- brief outward flight, then dissolve
+                end
+            end
+
             -- Check hit on player
-            if p.physics:enter("player") then
+            if not p.dead and not p.deflected and p.physics:enter("player") then
                 player:takeDamage(p.damage)
                 p.dead = true
             end

@@ -24,7 +24,11 @@ uniform int  lightCount;
 uniform vec2 cam_pos;
 uniform vec2 screen_size;
 
-vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
+// NOTE: the Image param is deliberately NOT named "texture" — that shadows
+// GLSL's built-in texture() function, which Texel() expands to when LÖVE
+// compiles shaders for GLSL ES / WebGL (the web build). Fine on desktop GL,
+// but it can fail to compile in-browser, so it's "tex" everywhere.
+vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     // Screen pixel -> world pixel conversion (see uniform comment).
     vec2 worldPos = screen_coords - screen_size * 0.5 + cam_pos;
 
@@ -35,7 +39,11 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) 
 
     float light = 0.0;
 
-    for (int i = 0; i < lightCount; i++) {
+    // ES2 loop rule (web build): the loop bound must be a compile-time
+    // constant, so it's the full array size (16) with a runtime skip for
+    // slots beyond the live count instead of `i < lightCount`.
+    for (int i = 0; i < 16; i++) {
+        if (i >= lightCount) break;
         float d = distance(worldPos, lights[i].xy);
         // Quadratic falloff: 1.0 at the light's center, 0.0 at the edge of its
         // radius. Squaring the linear ramp is what makes the pool bloom out
