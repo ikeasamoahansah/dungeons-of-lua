@@ -6,8 +6,9 @@
 
 # Screenshots
 
-![image](screenshots/Screenshot From 2026-10-25 21-04-39.png)
-![image](screenshots/Screenshot From 2026-10-25 21-05-15.png)
+![image](screenshots/Screenshot%20From%202026-10-25%2021-04-39.png)
+
+![image](screenshots/Screenshot%20From%202026-10-25%2021-05-15.png)
 
 
 ## Getting Started
