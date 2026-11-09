@@ -3,6 +3,63 @@
 local SEPARATION_RADIUS = 28
 local SEPARATION_STRENGTH = 400
 
+-- WALL SLIDING / ANTI-STUCK CHASE ---------------------------------------------------------------
+-- Chasing enemies push straight at the player; against a wall, force + damping
+-- kill almost all lateral slide, so an enemy can pin itself behind an obstacle
+-- forever. The fix: probe the direct route with a line query, and when a wall
+-- blocks it, scan outward angles for the nearest CLEAR heading and chase along
+-- that instead — the enemy slides around corners instead of grinding into them.
+local AVOID_PROBE_MAX = 240  -- cap on how far the ray probes (px)
+local AVOID_CLEARANCE = 24   -- probe a little past the player so corners resolve cleanly
+local AVOID_RECHECK   = 0.12 -- seconds between route re-checks (heading cache)
+
+-- Angles scanned off the direct path, narrowest first: the first clear one wins,
+-- which keeps the enemy on the *shortest* detour around the obstacle.
+local AVOID_ANGLES = {
+    0,
+    math.pi / 8, -math.pi / 8,
+    math.pi / 4, -math.pi / 4,
+    3 * math.pi / 8, -3 * math.pi / 8,
+    math.pi / 2, -math.pi / 2,
+    5 * math.pi / 8, -5 * math.pi / 8,
+    3 * math.pi / 4, -3 * math.pi / 4,
+    math.pi,
+}
+
+-- Is the straight line from (ex,ey) to the player blocked by a wall?
+local function pathBlocked(ex, ey)
+    local px, py = player.collider:getPosition()
+    local dx, dy = px - ex, py - ey
+    local dist = math.sqrt(dx * dx + dy * dy)
+    if dist < 8 then return false end  -- basically on top of the player
+
+    local len = dist + AVOID_CLEARANCE
+    local capped = math.min(len, AVOID_PROBE_MAX)
+    local hits = world:queryLine(ex, ey, ex + dx / dist * capped, ey + dy / dist * capped, {'wall'})
+    return #hits > 0, dist
+end
+
+-- Find the widest-opening direction around a blocking wall: returns a unit
+-- vector along the clear heading (or a perpendicular slide if walls surround).
+local function findOpenDirection(ex, ey)
+    local px, py = player.collider:getPosition()
+    local base = math.atan2(py - ey, px - ex)
+    local capped = math.min(distanceBetween(ex, ey, px, py) + AVOID_CLEARANCE, AVOID_PROBE_MAX)
+
+    for _, offset in ipairs(AVOID_ANGLES) do
+        local angle = base + offset
+        local hx, hy = math.cos(angle), math.sin(angle)
+        local hits = world:queryLine(ex, ey, ex + hx * capped, ey + hy * capped, {'wall'})
+        if #hits == 0 then
+            return hx, hy  -- shortest detour heading found
+        end
+    end
+
+    -- Totally enclosed: at least slide ALONG the wall (left-hand rule) rather
+    -- than grinding straight into it.
+    return math.cos(base + math.pi / 2), math.sin(base + math.pi / 2)
+end
+
 enemies = {}
 
 -- Returns a vector pushing this enemy away from nearby allies
@@ -176,18 +233,42 @@ function spawnEnemy(x, y, type, args)
                 local dirX = dx / (dist + 0.001)
                 local dirY = dy / (dist + 0.001)
 
+                -- ANTI-STUCK: while chasing, check every so often whether the
+                -- direct route to the player is wall-blocked. If it is, replace
+                -- the base heading with the shortest clear detour until the
+                -- route re-checks clean. Only used at range — within a
+                -- body-length of the player the direct push is what makes the
+                -- melee touch damage land.
+                self.avoidTimer = (self.avoidTimer or 0) - dt
+                if self.avoidTimer <= 0 then
+                    self.avoidTimer = AVOID_RECHECK
+                    local blocked = pathBlocked(ex, ey)
+                    if blocked and dist > 60 then
+                        self.avoidDirX, self.avoidDirY = findOpenDirection(ex, ey)
+                    else
+                        self.avoidDirX, self.avoidDirY = nil
+                    end
+                end
+                if self.avoidDirX then
+                    dirX, dirY = self.avoidDirX, self.avoidDirY
+                end
+
                 -- Flank offset: odd-indexed enemies circle left, even circle right
                 -- self.enemyIndex is assigned at spawn (see below)
-                if self.enemyIndex and self.enemyIndex % 2 == 0 then
-                    -- Rotate direction 45 degrees right
-                    local angle = math.pi / 4
-                    local c, s = math.cos(angle), math.sin(angle)
-                    dirX, dirY = c*dirX - s*dirY, s*dirX + c*dirY
-                else
-                    -- Rotate direction 45 degrees left
-                    local angle = -math.pi / 4
-                    local c, s = math.cos(angle), math.sin(angle)
-                    dirX, dirY = c*dirX - s*dirY, s*dirX + c*dirY
+                -- SKIPPED while wall-avoiding: rotating a detour heading 45° can
+                -- point it right back into the obstacle — the clean detour wins.
+                if not self.avoidDirX then
+                    if self.enemyIndex and self.enemyIndex % 2 == 0 then
+                        -- Rotate direction 45 degrees right
+                        local angle = math.pi / 4
+                        local c, s = math.cos(angle), math.sin(angle)
+                        dirX, dirY = c*dirX - s*dirY, s*dirX + c*dirY
+                    else
+                        -- Rotate direction 45 degrees left
+                        local angle = -math.pi / 4
+                        local c, s = math.cos(angle), math.sin(angle)
+                        dirX, dirY = c*dirX - s*dirY, s*dirX + c*dirY
+                    end
                 end
 
                 -- Separation from other enemies
@@ -310,23 +391,22 @@ function enemies:update(dt)
 end
 
 function enemies:draw()
+    -- NOTE: no `goto`/labels here — the web build (love.js) runs Lua 5.1,
+    -- which has no goto statement. Plain nesting works the same.
     for i, e in ipairs(self) do
-        -- Skip draw on blink-off frames
-        if e.dead and e.blinkVisible == false then
-            goto continue
+        -- Skip draw on blink-off frames; otherwise draw (tinting dead
+        -- enemies gray first).
+        local blinkOff = (e.dead and e.blinkVisible == false)
+        if not blinkOff then
+            if e.dead then
+                love.graphics.setColor(0.6, 0.6, 0.6, 0.7)
+            end
+
+            e:draw()
+
+            -- Reset color after each enemy
+            love.graphics.setColor(1, 1, 1, 1)
         end
-
-        -- Tint dead enemies gray
-        if e.dead then
-            love.graphics.setColor(0.6, 0.6, 0.6, 0.7)
-        end
-
-        e:draw()
-
-        -- Reset color after each enemy
-        love.graphics.setColor(1, 1, 1, 1)
-
-        ::continue::
     end
 end
 

@@ -149,6 +149,70 @@ function drawGameOver()
     love.graphics.setFont(love.graphics.getFont())
 end
 
+-- VICTORY SCREEN (game state 3) -----------------------------------------------------------------
+-- Shown after the eye boss's death grace period runs out. Warm gold-on-dark
+-- instead of the game-over red, everything frozen behind it.
+function drawVictory()
+    local w = love.graphics.getWidth()
+    local h = love.graphics.getHeight()
+    local t = love.timer.getTime()
+
+    -- Dark overlay with a warm hint so it reads "triumph", not "defeat"
+    love.graphics.setColor(0, 0.02, 0, 0.75)
+    love.graphics.rectangle("fill", 0, 0, w, h)
+
+    -- Title: gentle golden pulse
+    local pulse = 0.9 + 0.1 * math.sin(t * 3)
+    love.graphics.setColor(1, 0.85, 0.4, pulse)
+    love.graphics.setFont(fonts.large)
+    love.graphics.printf("DUNGEON CLEARED", 0, h / 2 - 70, w, "center")
+
+    -- Subtitle
+    love.graphics.setColor(1, 1, 1, 0.85)
+    love.graphics.setFont(fonts.small)
+    love.graphics.printf("The Eye has been defeated. The dungeon is yours.", 0, h / 2 - 10, w, "center")
+
+    -- Remaining HP flourish + restart hint
+    love.graphics.setFont(fonts.medium)
+    love.graphics.setColor(0.55, 1, 0.85, 0.9)
+    love.graphics.printf("HP remaining: " .. player.health .. "/" .. player.maxHealth, 0, h / 2 + 28, w, "center")
+
+    love.graphics.setColor(1, 1, 1, 0.8)
+    love.graphics.printf("Press 'R' to play again", 0, h / 2 + 60, w, "center")
+
+    -- Reset color and font to default
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setFont(love.graphics.getFont())
+end
+
+-- QUIT SCREEN (game state 4, web build only) -----------------------------------------------------
+-- Browsers can't close their own tab from inside the game, so this is what
+-- "Exit" means on the web: a farewell screen the player can leave with any
+-- key. Desktop never reaches this state (quitGame exits for real there).
+function drawQuitScreen()
+    local w = love.graphics.getWidth()
+    local h = love.graphics.getHeight()
+
+    -- Nearly opaque: this screen replaces the run entirely
+    love.graphics.setColor(0.03, 0.03, 0.05, 0.94)
+    love.graphics.rectangle("fill", 0, 0, w, h)
+
+    love.graphics.setFont(fonts.large)
+    love.graphics.setColor(1, 0.85, 0.7, 1)
+    love.graphics.printf("THANKS FOR PLAYING", 0, h / 2 - 70, w, "center")
+
+    love.graphics.setColor(1, 1, 1, 0.85)
+    love.graphics.setFont(fonts.small)
+    love.graphics.printf("You can close this browser tab now.", 0, h / 2 - 8, w, "center")
+
+    love.graphics.setColor(0.6, 0.6, 0.68, 1)
+    love.graphics.setFont(fonts.medium)
+    love.graphics.printf("(press any key to return to the menu)", 0, h / 2 + 50, w, "center")
+
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setFont(love.graphics.getFont())
+end
+
 -- The glowing shield orb drawn around the player while the barrier is up.
 -- Teal palette so it reads distinct from: torch light (warm white), fire
 -- spells (orange), enemy bolts (orange-red) and alert glows.
@@ -361,30 +425,31 @@ function drawMinimap()
 end
 
 function drawEnemyHealthBars()
+    -- NOTE: no `goto`/labels — Lua 5.1 (the web build) has no goto statement.
     for _, e in ipairs(enemies) do
-        if e.physics and not e.dead then  -- skip dead enemies
-            local ex, ey = e.physics:getPosition()
-            local barWidth = 24
-            local barHeight = 3
-            local x = ex - barWidth / 2
-            local y = ey - 20
-
+        if e.physics and not e.dead then
             local healthPercent = math.max(0, e.health / (e.maxHealth or e.health))
-            if healthPercent >= 1 then goto continue end
+            -- Undamaged enemies show no bar (was `goto continue` before)
+            if healthPercent < 1 then
+                local ex, ey = e.physics:getPosition()
+                local barWidth = 24
+                local barHeight = 3
+                local x = ex - barWidth / 2
+                local y = ey - 20
 
-            love.graphics.setColor(0.2, 0.2, 0.2, 0.8)
-            love.graphics.rectangle("fill", x, y, barWidth, barHeight, 1, 1)
+                love.graphics.setColor(0.2, 0.2, 0.2, 0.8)
+                love.graphics.rectangle("fill", x, y, barWidth, barHeight, 1, 1)
 
-            local r = 1 - healthPercent
-            local g = healthPercent
-            love.graphics.setColor(r, g, 0.1, 1)
-            love.graphics.rectangle("fill", x, y, barWidth * healthPercent, barHeight, 1, 1)
+                local r = 1 - healthPercent
+                local g = healthPercent
+                love.graphics.setColor(r, g, 0.1, 1)
+                love.graphics.rectangle("fill", x, y, barWidth * healthPercent, barHeight, 1, 1)
 
-            love.graphics.setColor(1, 1, 1, 0.3)
-            love.graphics.rectangle("line", x, y, barWidth, barHeight, 1, 1)
+                love.graphics.setColor(1, 1, 1, 0.3)
+                love.graphics.rectangle("line", x, y, barWidth, barHeight, 1, 1)
 
-            love.graphics.setColor(1, 1, 1, 1)
-            ::continue::
+                love.graphics.setColor(1, 1, 1, 1)
+            end
         end
     end
 end

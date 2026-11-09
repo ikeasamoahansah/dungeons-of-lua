@@ -82,7 +82,7 @@ function menu:keypressedMain(key)
     elseif key == "return" or key == "kpenter" or key == "space" then
         self:activate(MENU_ITEMS[self.selected].id)
     elseif key == "escape" then
-        love.event.quit()
+        quitGame()
     end
 end
 
@@ -122,7 +122,7 @@ function menu:activate(id)
         self.mode = "options"
         self.optionSelected = 1
     elseif id == "exit" then
-        love.event.quit()
+        quitGame()
     end
 end
 

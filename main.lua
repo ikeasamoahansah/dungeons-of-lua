@@ -37,10 +37,26 @@ function love.draw()
 
     if gameState == 2 then
         drawGameOver()
+    elseif gameState == 3 then
+        drawVictory()
+    elseif gameState == 4 then
+        drawQuitScreen()
     end
 end
 
 function love.keypressed(key)
+    -- QUIT SCREEN (web build): any key returns to the menu — the run stays
+    -- paused behind it, so "Resume" picks the dungeon back up. The dungeon
+    -- music resumes with it (quitGame stopped it on the way out).
+    if gameState == 4 then
+        gameState = 0
+        menu:enter()
+        if sounds and sounds.dungeon then
+            sounds.dungeon:play()
+        end
+        return
+    end
+
     -- MENU PRIORITY: while in the menu every keypress is menu input; the
     -- gameplay handlers below never run (gameState ~= 1 guards them anyway).
     if gameState == 0 then
@@ -49,13 +65,14 @@ function love.keypressed(key)
     end
 
     -- In-game Esc = pause out to the menu (world freezes, Resume continues
-    -- the run). Esc from the game-over screen quits outright.
+    -- the run). Esc anywhere else = quit — a real quit on desktop, the
+    -- farewell screen in the browser (quitGame).
     if key == "escape" then
         if gameState == 1 then
             gameState = 0
             menu:enter()
         else
-            love.event.quit()
+            quitGame()
         end
         return
     end
@@ -65,8 +82,9 @@ function love.keypressed(key)
     end
 
     -- Gameplay actions go through keybinds — what "x"/"space"/"c"/"e" used to
-    -- hardcode is now whatever the options screen says.
-    if gameState ~= 2 then
+    -- hardcode is now whatever the options screen says. (Only live in state 1,
+    -- so the game-over / cleared screens don't cast spells)
+    if gameState == 1 then
         if keybinds:keyMatches("attack", key) then
             player:startAttack()
         end
@@ -81,8 +99,13 @@ function love.keypressed(key)
         end
     end
 
-    -- R only restarts from the game-over screen
-    if key == "r" and gameState == 2 then
-        love.event.quit("restart")
+    -- R restarts from the game-over OR cleared screens — including during the
+    -- victory grace period right after the boss dies, when the cleared screen
+    -- hasn't come up yet (gameState is still 1 while the world winds down).
+    -- Uses the in-game restart (restartGame) because love.event.quit("restart")
+    -- can't relaunch the runtime in the browser build.
+    if key == "r" and (gameState == 2 or gameState == 3
+                       or (gameState == 1 and victoryTimer > 0)) then
+        restartGame()
     end
 end

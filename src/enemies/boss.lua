@@ -264,7 +264,12 @@ local function bossInit(enemy, x, y, args)
         love.graphics.setColor(1, 1, 1, 1)
     end
 
+    -- Boss death = the dungeon is beaten. Rather than just collapsing like a
+    -- normal enemy, the eye boss's death kicks off the victory sequence
+    -- (src/update.lua): pacifies remaining enemies/shots, plays a short grace
+    -- period, then brings up the cleared screen (game state 3).
     function enemy:die()
+        startVictory()
     end
     return enemy
 
